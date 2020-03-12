@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+import sys
+
 import aux_funcs as af
 import model_funcs as mf
 import math
@@ -25,6 +27,7 @@ class BasicBlockWOutput(nn.Module):
         conv_layer.append(nn.Conv2d(in_channels, channels, kernel_size=3, stride=stride, padding=1, bias=False))
         conv_layer.append(nn.BatchNorm2d(channels))
         conv_layer.append(nn.ReLU())
+        # The output part
         conv_layer.append(nn.Conv2d(channels, channels, kernel_size=3, stride=1, padding=1, bias=False))
         conv_layer.append(nn.BatchNorm2d(channels))
 
@@ -42,7 +45,7 @@ class BasicBlockWOutput(nn.Module):
         layers.append(nn.ReLU())
 
         self.layers = layers
-
+        
         if add_output:
             self.output = af.InternalClassifier(input_size, self.expansion*channels, num_classes) 
             self.no_output = False
@@ -82,6 +85,7 @@ class ResNet_SDN(nn.Module): #56 layers
         self.block_type = params['block_type']
         self.add_out_nonflat = params['add_ic']
         self.add_output = [item for sublist in self.add_out_nonflat for item in sublist]
+        
         self.init_weights = params['init_weights']
         self.train_func = mf.sdn_train
         self.in_channels = 16
@@ -162,7 +166,7 @@ class ResNet_SDN(nn.Module): #56 layers
         return outputs
 
     # takes a single input
-    def early_exit(self, x):
+    def early_exit(self, x): # -> the function to use instead of forward if wanting to allow access to earlyexit
         confidences = []
         outputs = []
 

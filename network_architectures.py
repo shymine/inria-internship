@@ -4,7 +4,7 @@
 # also contains the hyper-parameters for model training
 
 import torch
-
+import sys
 import pickle
 import os
 
@@ -217,7 +217,6 @@ def get_lr_params(model_params):
 def save_model(model, model_params, models_path, model_name, epoch=-1):
     if not os.path.exists(models_path):
         os.makedirs(models_path)
-    
     
     network_path = models_path + '/' + model_name
 
