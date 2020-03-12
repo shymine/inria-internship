@@ -55,7 +55,7 @@ class BasicBlockWOutput(nn.Module):
     def forward(self, x):
         fwd = self.layers[0](x) # conv layers
         fwd = fwd + self.layers[1](x) # shortcut
-        return self.layers[2](fwd), 1, self.output(fwd)         # output layers for this module
+        return self.layers[2](fwd), 1, self.output(fwd)  # output layers for this module
     
     def only_output(self, x):
         fwd = self.layers[0](x) # conv layers

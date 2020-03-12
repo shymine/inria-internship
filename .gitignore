@@ -5,3 +5,14 @@ networks/
 outputs/
 
 __pycache__/
+
+## the experiments are not needed
+
+confusion_experiments.py
+early_exit_experiments.py
+gradcam_experiments.py
+overthinking_experiments.py
+
+## only for running experiments on inria
+
+igrida_bash.sh

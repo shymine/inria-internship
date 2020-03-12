@@ -62,8 +62,8 @@ def train(models_path, untrained_models, sdn=False, ic_only_sdn=False, device='c
         metrics = trained_model.train_func(trained_model, dataset, num_epochs, optimizer, scheduler, device=device)
         model_params['train_top1_acc'] = metrics['train_top1_acc']
         model_params['test_top1_acc'] = metrics['test_top1_acc']
-        model_params['train_top5_acc'] = metrics['train_top5_acc']
-        model_params['test_top5_acc'] = metrics['test_top5_acc']
+        model_params['train_top3_acc'] = metrics['train_top3_acc']
+        model_params['test_top3_acc'] = metrics['test_top3_acc']
         model_params['epoch_times'] = metrics['epoch_times']
         model_params['lrs'] = metrics['lrs']
         total_training_time = sum(model_params['epoch_times'])
