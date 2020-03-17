@@ -62,7 +62,7 @@ def get_loader(data, augment):
     else:
         train_loader = data.train_loader
 
-    return train_loader  
+    return train_loader
 
 
 def sdn_train(model, data, epochs, optimizer, scheduler, device='cpu'):

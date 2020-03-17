@@ -452,3 +452,47 @@ def get_tinyimagenet_classes(prediction=None):
 
     return tinyimagenet_classes
 
+def calculate_confusion(model, dataset, device='cpu'):
+    print("calculating confusion")
+    loader = get_dataset(dataset).train_loader #test_loader
+    confusion = []
+    print("batch size {}".format(loader.batch_size))
+
+
+    for l in range(model.num_output):
+        confusion.append([0 for _ in range(model.num_output)])
+    # confusion[x][y] example predicted in x that are correct and are the same in y
+    model.eval()
+    model.cuda()
+    with torch.no_grad():
+        example_num = 0
+        for batch in loader:
+            b_x = batch[0].to(device)
+            b_y = batch[1].to(device)
+            #print("batch: {}".format(len(batch[0])))
+            outputs = model(b_x)
+            #print("outputs: {}".format(len(outputs)))
+            #print("outputs: {}".format(outputs[0].shape))
+            pred = format_outputs(outputs)
+            #print("pred: {}".format(torch.tensor(pred[0:3])))
+            #print("target: {}".format(b_y.size(0)))
+            for example in range(b_y.size(0)):
+                for i in range(model.num_output):
+                    pred_i = pred[example][i]
+                    for j in range(i, model.num_output):
+                        pred_j = pred[example][j]
+                        if pred_i == pred_j:
+                            confusion[i][j] += 1
+            example_num += b_y.size(0)
+        confusion = (np.array(confusion)/example_num).tolist()
+    print("confusion: {}".format(confusion))
+    return confusion
+
+def format_outputs(outputs):
+    res = []
+    for example in range(len(outputs[0])):
+        out = []
+        for output in range(len(outputs)):
+            out.append(outputs[output][example].argmax())
+        res.append(out)
+    return res
