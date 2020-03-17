@@ -456,11 +456,15 @@ def calculate_confusion(model, dataset, device='cpu'):
     print("calculating confusion")
     loader = get_dataset(dataset).train_loader #test_loader
     confusion = []
+    confusion_correct = []
+    correct_found = []
     print("batch size {}".format(loader.batch_size))
 
 
     for l in range(model.num_output):
         confusion.append([0 for _ in range(model.num_output)])
+        confusion_correct.append([0 for _ in range(model.num_output)])
+        correct_found.append(0)
     # confusion[x][y] example predicted in x that are correct and are the same in y
     model.eval()
     model.cuda()
@@ -469,24 +473,29 @@ def calculate_confusion(model, dataset, device='cpu'):
         for batch in loader:
             b_x = batch[0].to(device)
             b_y = batch[1].to(device)
-            #print("batch: {}".format(len(batch[0])))
             outputs = model(b_x)
-            #print("outputs: {}".format(len(outputs)))
-            #print("outputs: {}".format(outputs[0].shape))
             pred = format_outputs(outputs)
-            #print("pred: {}".format(torch.tensor(pred[0:3])))
-            #print("target: {}".format(b_y.size(0)))
             for example in range(b_y.size(0)):
                 for i in range(model.num_output):
                     pred_i = pred[example][i]
+                    count = False
+                    if pred_i == b_y[i]:
+                        count = True
+                        correct_found[i] += 1
                     for j in range(i, model.num_output):
                         pred_j = pred[example][j]
                         if pred_i == pred_j:
                             confusion[i][j] += 1
+                            if count :
+                                confusion_correct[i][j] += 1
             example_num += b_y.size(0)
         confusion = (np.array(confusion)/example_num).tolist()
+        for i, arr in enumerate(confusion_correct):
+            confusion_correct[i] = [elm/correct_found[i] for elm in arr]
+
     print("confusion: {}".format(confusion))
-    return confusion
+    print("confusion_correct: {}".format(confusion_correct))
+    return confusion, confusion_correct
 
 def format_outputs(outputs):
     res = []

@@ -6,6 +6,8 @@ outputs/
 
 __pycache__/
 
+.idea
+
 ## the experiments are not needed
 
 confusion_experiments.py

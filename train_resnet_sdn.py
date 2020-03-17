@@ -58,9 +58,11 @@ def main(confusion, model_name):
         model, model_params = arcs.load_model(models_path, model_name,epoch=-1)
 
     if confusion:
-        confusion = af.calculate_confusion(model, 'cifar10', device)
-        df = pd.DataFrame(confusion)
-        df.to_csv("confusion.csv")
+        confusion, confusion_correct = af.calculate_confusion(model, 'cifar10', device)
+        confusion_df = pd.DataFrame(confusion)
+        correct_df = pd.DataFrame(confusion_correct)
+        confusion_df.to_csv("confusion.csv")
+        correct_df.to_csv("confusion_correct.csv")
 
 if __name__ == '__main__':
     try:
