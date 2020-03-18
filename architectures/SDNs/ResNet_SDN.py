@@ -138,7 +138,7 @@ class ResNet_SDN(nn.Module): #56 layers
         layers = []
         for cur_block_id, stride in enumerate(strides):
             add_output = self.add_out_nonflat[block_id][cur_block_id]
-            params  = (add_output, self.num_classes, int(self.cur_input_size), self.cur_output_id)
+            params = (add_output, self.num_classes, int(self.cur_input_size), self.cur_output_id)
             layers.append(self.block(self.in_channels, channels, params, stride))
             self.in_channels = channels * self.block.expansion
             self.cur_output_id += add_output
