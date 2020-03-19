@@ -406,3 +406,23 @@ def cnn_get_confidence(model, loader, device='cpu'):
 
    
     return correct, wrong, instance_confidence
+
+def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
+    augment = model.augment_training
+    metrics = {
+        'epoch_times': [],
+        'test_top1_acc': [],
+        'train_top1_acc': [],
+        'lrs': []
+    }
+    # max tau: % of the network for the IC -> if 3 outputs: 0.33, 0.66, 1
+    max_coeffs = [0.01+(1/model.num_output)*(i+1) for i in range(model.num_output-1)]
+    print('max_coeffs: {}'.format(max_coeffs))
+    model.to(device)
+    for epoch in range(1, epochs+1):
+        scheduler.step()
+        cur_lr = af.get_lr(optimizer)
+        print('\nEpoch: {}/{}'.format(epoch, epochs))
+        print('cur_lr: {}'.format(cur_lr))
+
+

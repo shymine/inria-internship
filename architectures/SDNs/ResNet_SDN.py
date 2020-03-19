@@ -197,3 +197,4 @@ class ResNet_SDN(nn.Module): #56 layers
         max_confidence_output = np.argmax(confidences)
         is_early = False
         return outputs[max_confidence_output], max_confidence_output, is_early
+
