@@ -160,6 +160,16 @@ def create_mobilenet(models_path, task, save_type, get_params=False):
 
     return save_networks(model_name, model_params, models_path, save_type)
 
+def create_resnet_iterative(models_path):
+    print('Creating Resnet for iterative training for cifar10')
+    model_params = get_task_params('cifar10')
+    model_name = '{}_resnet_iterative'.format('cifar10')
+    model_params['network_type'] = 'resnet'
+    model_params['augment_training'] = True
+    model_params['init_weights'] = True
+    model_params['block_type'] = 'basic'
+    model_params['num_blocks'] = []
+
 def get_task_params(task):
     if task == 'cifar10':
         return cifar10_params()
