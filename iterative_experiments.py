@@ -3,9 +3,8 @@ import network_architectures as arcs
 import model_funcs as mf
 
 def train_model(models_path, device):
-    _, model_name = arcs.create_resnet_iterative(models_path, return_name=True)
+    trained_model, model_params = arcs.create_resnet_iterative(models_path, return_name=False)
     print("Training iteratively...")
-    trained_model, model_params = arcs.load_model(models_path, model_name, 0)
     dataset = af.get_dataset(model_params['task'])
     lr = model_params['learning_rate']
     momentum = model_params['momentum']
@@ -13,7 +12,7 @@ def train_model(models_path, device):
     milestones = model_params['milestones']
     gammas = model_params['gammas']
     num_epochs = model_params['epochs']
-
+    model_name = model_params['base_model']
     model_params['optimizer'] = 'SGD'
 
     opti_param = (lr, weight_decay, momentum)
@@ -23,7 +22,7 @@ def train_model(models_path, device):
     trained_model_name = model_name + '_training'
 
     trained_model.to(device)
-    model_name.train_func(trained_model, dataset, num_epochs, optimizer, scheduler, device)
+    trained_model.train_func(trained_model, dataset, num_epochs, optimizer, scheduler, device)
 
     arcs.save_model(trained_model, model_params, models_path, trained_model_name, epoch=-1)
     return trained_model
