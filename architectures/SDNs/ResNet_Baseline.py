@@ -26,6 +26,9 @@ class ResNet_Baseline(nn.Module):
         self.init_weights = params['init_weights']
         self.block_type = params['block_type']
         self.num_class = 10
+        self.train_func = mf.iter_training
+        self.test_func = None
+        self.num_output = 0
 
         if self.block_type == 'basic':
             self.block = resNet.BasicBlockWOutput
@@ -45,12 +48,14 @@ class ResNet_Baseline(nn.Module):
 
         self.init_conv = nn.Sequential(*init_conv)
         self.layers = nn.ModuleList()
-        self.layers.extend([self.block(self.in_channels, 16, (True if i == 2 else False, self.num_class, 32, 1)) for i in range(3)])
+        self.grow()
 
         self.end_layers = nn.Sequential(*end_layers)
         print("model: {}".format(self))
 
-    def forward(self, input):
+        self.to_eval()
+
+    def forward_eval(self, input):
         outputs = []
         fwd = self.init_conv(input)
         for layer in self.layers:
@@ -60,3 +65,29 @@ class ResNet_Baseline(nn.Module):
         fwd = self.end_layers(fwd)
         outputs.append(fwd)
         return outputs
+
+    def forward_train(self, input):
+        outputs = []
+        fwd = self.init_conv(input)
+        for layer in self.layers:
+            fwd, is_output, output = layer(fwd)
+            if is_output:
+                outputs.append(output)
+        return outputs
+
+    def to_train(self):
+        self.forward = self.forward_train
+
+    def to_eval(self):
+        self.forward = self.forward
+
+    def grow(self):
+        self.layers.extend(
+            [self.block(self.in_channels, 16,
+                        (True if i == 2 else False,
+                         self.num_class,
+                         32,
+                         1))
+             for i in range(3)]
+        )
+        self.num_output += 1
