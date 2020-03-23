@@ -31,7 +31,7 @@ def sdn_training_step(optimizer, model, coeffs, batch, device):
         cur_output = output[ic_id]
         cur_loss = float(coeffs[ic_id])*af.get_loss_criterion()(cur_output, b_y)
         total_loss += cur_loss
-    print("inter loss: {}".format(total_loss))
+
     total_loss += af.get_loss_criterion()(output[-1], b_y)
     print("getLossCriterion: {}".format(total_loss))
     total_loss.backward()
@@ -441,7 +441,7 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
             total_loss = sdn_training_step(optimizer, model, cur_coeffs, batch, device) #iter_training_step()
             if i%100 == 0:
                 print("Loss: {}".format(total_loss))
-        sys.exit()
+
         top1_test, top3_test = sdn_test(model, data.test_loader, device)
         end_time = time.time()
         print('Top1 Test accuracies: {}'.format(top1_test))
