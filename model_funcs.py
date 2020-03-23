@@ -428,6 +428,7 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
         cur_lr = af.get_lr(optimizer)
         print('\nEpoch: {}/{}'.format(epoch, epochs))
         print('cur_lr: {}'.format(cur_lr))
+        max_coeffs = calc_coeff(model)
         cur_coeffs = 0.01 + epoch*(np.array(max_coeffs)/epochs)
         print("tmp cur_coeffs: {}".format(cur_coeffs))
         cur_coeffs = np.minimum(max_coeffs, cur_coeffs)
