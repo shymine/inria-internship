@@ -167,7 +167,7 @@ def create_resnet_iterative(models_path, return_name=True):
     model_params = get_task_params('cifar10')
     model_name = '{}_resnet_iterative'.format('cifar10')
     model_params['network_type'] = 'resnet_iterative'
-    model_params['augment_training'] = False
+    model_params['augment_training'] = True
     model_params['init_weights'] = True
     model_params['block_type'] = 'basic'
     get_lr_params(model_params)
