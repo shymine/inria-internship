@@ -55,6 +55,18 @@ class ResNet_Baseline(nn.Module):
 
         self.to_eval()
 
+        if self.init_weights:
+            self._init_weights(self.modules())
+
+
+    def _init_weights(self, iter):
+        for m in iter:
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
     def forward_eval(self, input):
         outputs = []
         fwd = self.init_conv(input)
@@ -79,15 +91,17 @@ class ResNet_Baseline(nn.Module):
         self.forward = self.forward_train
 
     def to_eval(self):
-        self.forward = self.forward
+        self.forward = self.forward_eval
 
     def grow(self):
-        self.layers.extend(
-            [self.block(self.in_channels, 16,
+        layers = [self.block(self.in_channels, 16,
                         (True if i == 2 else False,
                          self.num_class,
                          32,
                          1))
              for i in range(3)]
+        self._init_weights(layers)
+        self.layers.extend(
+            layers
         )
         self.num_output += 1

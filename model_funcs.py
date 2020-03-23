@@ -453,6 +453,7 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
 
         if epoch in [10,20,30,40,50,60,70]:
             model.grow()
+            model.to(device)
             print("model grow: {}".format(model))
             if epoch == 70:
                 model.to_eval()
