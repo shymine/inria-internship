@@ -11,9 +11,10 @@ def train_model(models_path, device):
     weight_decay = model_params['weight_decay']
     milestones = model_params['milestones']
     gammas = model_params['gammas']
-    num_epochs = model_params['epochs']
+    num_epochs = 200 #model_params['epochs'] #100
     model_name = model_params['base_model']
     model_params['optimizer'] = 'SGD'
+
 
     opti_param = (lr, weight_decay, momentum)
     lr_schedule_params = (milestones, gammas)

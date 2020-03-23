@@ -452,7 +452,7 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
         epoch_time = int(end_time - start_time)
         print('Epoch took {} seconds.'.format(epoch_time))
 
-        if epoch in [10,20,30,40,50,60,70]:
+        if epoch in [25,50,75,100,125,150]:
             model.grow()
             model.to(device)
             print("model grow: {}".format(model))
