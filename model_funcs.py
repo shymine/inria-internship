@@ -33,7 +33,6 @@ def sdn_training_step(optimizer, model, coeffs, batch, device):
         total_loss += cur_loss
 
     total_loss += af.get_loss_criterion()(output[-1], b_y)
-    print("getLossCriterion: {}".format(total_loss))
     total_loss.backward()
     optimizer.step()                # apply gradients
 
@@ -451,6 +450,12 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
         print('Top3 Train accuracies: {}'.format(top3_train))
         epoch_time = int(end_time - start_time)
         print('Epoch took {} seconds.'.format(epoch_time))
+
+        if epoch in [10,20,30,40,50,60,70]:
+            model.grow()
+            print("model grow: {}".format(model))
+            if epoch == 70:
+                model.to_eval()
 
 # def iter_training_step(optimizer, model, cur_coeffs, batch, device):
 #     b_x = batch[0].to(device)
