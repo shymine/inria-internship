@@ -5,7 +5,7 @@ import model_funcs as mf
 def train_model(models_path, device):
     trained_model, model_params = arcs.create_resnet_iterative(models_path, return_name=False)
     print("Training iteratively...")
-    dataset = af.get_dataset(model_params['task'], 50)
+    dataset = af.get_dataset(model_params['task'], 128)
     lr = model_params['learning_rate']
     momentum = model_params['momentum']
     weight_decay = model_params['weight_decay']
