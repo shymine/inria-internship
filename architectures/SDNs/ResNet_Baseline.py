@@ -4,6 +4,7 @@ import torch.nn as nn
 import aux_funcs as af
 import model_funcs as mf
 import architectures.SDNs.ResNet_SDN as resNet
+from torch.optim import SGD, Adam
 
 class ResNet_Baseline(nn.Module):
     def __init__(self, params):
@@ -48,9 +49,9 @@ class ResNet_Baseline(nn.Module):
 
         self.init_conv = nn.Sequential(*init_conv)
         self.layers = nn.ModuleList()
-        self.grow()
-
         self.end_layers = nn.Sequential(*end_layers)
+
+        self.grow()
         print("model: {}".format(self))
 
         self.to_eval()

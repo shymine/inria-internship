@@ -11,19 +11,19 @@ def train_model(models_path, device):
     weight_decay = model_params['weight_decay']
     milestones = model_params['milestones']
     gammas = model_params['gammas']
-    num_epochs = 200 #model_params['epochs'] #100
+    num_epochs = model_params['epochs'] #100
     model_name = model_params['base_model']
     model_params['optimizer'] = 'SGD'
 
 
-    opti_param = (lr, weight_decay, momentum)
+    opti_param = (lr, weight_decay, momentum, -1)
     lr_schedule_params = (milestones, gammas)
-    
-    optimizer, scheduler = af.get_full_optimizer(trained_model, opti_param, lr_schedule_params)
-    trained_model_name = model_name + '_training'
 
     trained_model.to(device)
-    trained_model.train_func(trained_model, dataset, num_epochs, optimizer, scheduler, device)
+    #optimizer, scheduler = af.get_full_optimizer(trained_model, opti_param, lr_schedule_params)
+    trained_model_name = model_name + '_training'
+
+    trained_model.train_func(trained_model, dataset, num_epochs, opti_param, lr_schedule_params, device)
 
     arcs.save_model(trained_model, model_params, models_path, trained_model_name, epoch=-1)
     return trained_model

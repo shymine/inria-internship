@@ -408,8 +408,9 @@ def cnn_get_confidence(model, loader, device='cpu'):
    
     return correct, wrong, instance_confidence
 
-def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
+def iter_training(model, data, epochs, optim_params, scheduler_params, device='cpu'):
     augment = model.augment_training
+    optimizer, scheduler = af.get_full_optimizer(model, optim_params, scheduler_params)
     metrics = {
         'epoch_times': [],
         'test_top1_acc': [],
@@ -451,11 +452,13 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
         epoch_time = int(end_time - start_time)
         print('Epoch took {} seconds.'.format(epoch_time))
 
-        if epoch in [25,50,75,100,125,150]:
+        if epoch in [25,50,75]: #,100,125,150]:
             print("layers: {}".format(model.layers))
             print("weights1: {}".format(model.layers[-1].output.linear.weight))
             model.grow()
             model.to(device)
+            optim_params[3] = epoch
+            optimizer, scheduler = af.get_full_optimizer(model, optim_params, scheduler_params)
             print("model grow")
             if epoch == 70:
                 model.to_eval()
