@@ -106,3 +106,21 @@ class ResNet_Baseline(nn.Module):
             layers
         )
         self.num_output += 1
+
+    def grow_copy(self):
+        model = ResNet_Baseline({
+            'augment_training':self.augment_training,
+            'init_weights': False,
+            'block_type': 'basic'
+        })
+        model.grow()
+        with torch.no_grad():
+            for id, layer in enumerate(self.init_conv):
+                if hasattr(layer, 'weight'):
+                    model.init_conv[id].weight.copy_(layer.weigh)
+            for id, unit in enumerate(self.layers):
+                for id2, layer in enumerate(unit):
+                    if hasattr(layer, 'weight'):
+                        model.layers[id][id2].weight.copy_(layer.weight)
+        self.init_conv = model.init_conv
+        self.layers = model.layers
