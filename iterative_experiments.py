@@ -18,7 +18,7 @@ def train_model(models_path, device):
 
     opti_param = (lr, weight_decay, momentum)
     lr_schedule_params = (milestones, gammas)
-    print('model: {}'.format(model_name))
+    
     optimizer, scheduler = af.get_full_optimizer(trained_model, opti_param, lr_schedule_params)
     trained_model_name = model_name + '_training'
 

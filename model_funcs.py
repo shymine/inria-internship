@@ -459,7 +459,7 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
             print("model grow")
             if epoch == 70:
                 model.to_eval()
-            print("weights2: {}".format(model.layers[-2].output.linear.weight))
+            print("weights2: {}".format(model.layers[-4].output.linear.weight))
 
 # def iter_training_step(optimizer, model, cur_coeffs, batch, device):
 #     b_x = batch[0].to(device)
