@@ -238,7 +238,7 @@ def get_full_optimizer(model, lr_params, stepsize_params):
 
     optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, momentum=momentum, weight_decay=weight_decay)
     if len(lr_params) == 5:
-        optimizer.add_param_group({'initial_lr':lr_params[4]})
+        optimizer.add_param_group({'params':{'initial_lr':lr_params[4]}})
     scheduler = MultiStepMultiLR(optimizer, milestones=milestones, gammas=gammas, last_epoch=epoch)
 
     return optimizer, scheduler
