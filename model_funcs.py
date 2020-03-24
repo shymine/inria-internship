@@ -457,7 +457,7 @@ def iter_training(model, data, epochs, optim_params, scheduler_params, device='c
             print("weights1: {}".format(model.layers[-1].output.linear.weight))
             model.grow()
             model.to(device)
-            optim_param2 = optim_params.replace(3, epoch)
+            optim_param2 = optim_params[:3]+(epoch,)
             optimizer, scheduler = af.get_full_optimizer(model, optim_param2, scheduler_params)
             print("model grow")
             if epoch == 70:
