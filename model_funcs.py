@@ -430,7 +430,6 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
         print('cur_lr: {}'.format(cur_lr))
         max_coeffs = calc_coeff(model)
         cur_coeffs = 0.01 + epoch*(np.array(max_coeffs)/epochs)
-        print("tmp cur_coeffs: {}".format(cur_coeffs))
         cur_coeffs = np.minimum(max_coeffs, cur_coeffs)
         print("current coeffs: {}".format(cur_coeffs))
 
@@ -453,11 +452,14 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
         print('Epoch took {} seconds.'.format(epoch_time))
 
         if epoch in [25,50,75,100,125,150]:
+            print("layers: {}".format(model.layers))
+            print("weights1: {}".format(model.layers[-1].output.linear.weight))
             model.grow()
             model.to(device)
-            print("model grow: {}".format(model))
+            print("model grow")
             if epoch == 70:
                 model.to_eval()
+            print("weights2: {}".format(model.layers[-2].output.linear.weight))
 
 # def iter_training_step(optimizer, model, cur_coeffs, batch, device):
 #     b_x = batch[0].to(device)
