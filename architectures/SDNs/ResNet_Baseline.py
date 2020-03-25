@@ -26,6 +26,9 @@ class ResNet_Baseline(nn.Module):
         self.augment_training = params['augment_training']
         self.init_weights = params['init_weights']
         self.block_type = params['block_type']
+        # self.init_type = params['init_type'] #full, full_ic, iterative
+        # self.total_size = params['size'] #the size to reach (number of grow)
+
         self.num_class = 10
         self.train_func = mf.iter_training
         self.test_func = None
@@ -50,6 +53,8 @@ class ResNet_Baseline(nn.Module):
         self.init_conv = nn.Sequential(*init_conv)
         self.layers = nn.ModuleList()
         self.end_layers = nn.Sequential(*end_layers)
+
+        # if self.init_type == "full":
 
         self.grow()
 
@@ -93,9 +98,9 @@ class ResNet_Baseline(nn.Module):
     def to_eval(self):
         self.forward = self.forward_eval
 
-    def grow(self):
+    def grow(self, add_ic=True):
         layers = [self.block(self.in_channels, 16,
-                        (True if i == 2 else False,
+                        (add_ic if i == 2 else False,
                          self.num_class,
                          32,
                          1))
@@ -103,17 +108,17 @@ class ResNet_Baseline(nn.Module):
         self._init_weights(layers)
         self.layers.extend(layers)
         self.num_output += 1
-        print("parameters: {}".format([l.parameters(True) for l in layers]))
-        return filter(lambda p: p.requires_grad, [l.parameters(True) for l in layers])
+        print("parameters: {}".format([p for l in layers for p in l.parameters(True)]))
+        return filter(lambda p: p.requires_grad, [p for l in layers for p in l.parameters(True)])
 
-    def grow_copy(self):
+    def grow_copy(self, add_ic=True):
         model = ResNet_Baseline({
             'augment_training':self.augment_training,
             'init_weights': False,
             'block_type': 'basic'
         })
-        for _ in range(self.num_output):
-            model.grow()
+        for i in range(self.num_output):
+            model.grow(add_ic=True if hasattr(self.layers[3*i+2], 'output') else False)
         with torch.no_grad():
             for id, layer in enumerate(self.init_conv):
                 if hasattr(layer, 'weight'):
