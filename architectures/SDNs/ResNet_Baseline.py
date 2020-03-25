@@ -104,7 +104,7 @@ class ResNet_Baseline(nn.Module):
         self._init_weights(layers)
         self.layers.extend(layers)
         self.num_output += 1
-        return filter(lambda p: p.requires_grad, layers)
+        return filter(lambda p: p.parameters(True).requires_grad, layers)
 
     def grow_copy(self):
         model = ResNet_Baseline({
