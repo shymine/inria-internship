@@ -26,7 +26,7 @@ class ResNet_Baseline(nn.Module):
         self.augment_training = params['augment_training']
         self.init_weights = params['init_weights']
         self.block_type = params['block_type']
-        # self.init_type = params['init_type'] #full, full_ic, iterative
+        # self.init_type = params['init_type'] #full, full_ic, iterative #if full_ic and iterative, give the array of adding IC
         # self.total_size = params['size'] #the size to reach (number of grow)
 
         self.num_class = 10
@@ -108,14 +108,15 @@ class ResNet_Baseline(nn.Module):
         self._init_weights(layers)
         self.layers.extend(layers)
         self.num_output += 1
-        print("parameters: {}".format([p for l in layers for p in l.parameters(True)]))
         return filter(lambda p: p.requires_grad, [p for l in layers for p in l.parameters(True)])
 
     def grow_copy(self, add_ic=True):
         model = ResNet_Baseline({
             'augment_training':self.augment_training,
             'init_weights': False,
-            'block_type': 'basic'
+            'block_type': 'basic'#,
+            # 'size': self.num_output,
+            # 'init_type': self.init_type
         })
         for i in range(self.num_output):
             model.grow(add_ic=True if hasattr(self.layers[3*i+2], 'output') else False)
