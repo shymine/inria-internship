@@ -422,6 +422,7 @@ def iter_training(model, data, epochs, optim_params, scheduler_params, device='c
     # max tau: % of the network for the IC -> if 3 outputs: 0.33, 0.66, 1
     max_coeffs = calc_coeff(model)
     print('max_coeffs: {}'.format(max_coeffs))
+    print('layers: {}'.format(model.layers))
     model.to(device)
     model.to_train()
     for epoch in range(1, epochs+1):
@@ -453,16 +454,12 @@ def iter_training(model, data, epochs, optim_params, scheduler_params, device='c
         print('Epoch took {} seconds.'.format(epoch_time))
 
         if epoch in [25,50,75]: #,100,125,150]:
-            print("layers: {}".format(model.layers))
-            print("weights1: {}".format(model.layers[-1].output.linear.weight))
             grown_layers = model.grow()
             model.to(device)
             optim_param2 = optim_params[:3]+(epoch,)
             optimizer.add_param_group({'params':grown_layers}) #= af.get_full_optimizer(model, optim_param2, scheduler_params)
             print("model grow")
-            if epoch == 70:
-                model.to_eval()
-            print("weights2: {}".format(model.layers[-4].output.linear.weight))
+            print("layers: {}".format(model.layers))
 
 # def iter_training_step(optimizer, model, cur_coeffs, batch, device):
 #     b_x = batch[0].to(device)
