@@ -3,7 +3,7 @@ import network_architectures as arcs
 import model_funcs as mf
 
 def train_model(models_path, device):
-    trained_model, model_params = arcs.create_resnet_iterative(models_path, return_name=False)
+    trained_model, model_params = arcs.create_resnet_iterative(models_path, 'iterative', return_name=False)
     print("Training iteratively...")
     dataset = af.get_dataset(model_params['task'], 128)
     lr = model_params['learning_rate']/10 #0.01
