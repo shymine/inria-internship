@@ -26,6 +26,8 @@ class ResNet_Baseline(nn.Module):
                         }
         :type params:
         """
+        self.ic_only = False
+
         self.augment_training = params['augment_training']
         self.init_weights = params['init_weights']
         self.block_type = params['block_type']
