@@ -129,8 +129,10 @@ class ResNet_Baseline(nn.Module):
         print("num_output: {}".format(self.num_output))
         for ind, ic in enumerate(self.ics):
             tmp += ic
+            # print("loop ({}), tmp:{}, ic:{}".format(ind, tmp, ic))
             if tmp >= self.num_output:
                 ics_index = ind
+                break
             if tmp == self.num_ics: # no more ICs are to be grown
                 self.to_eval()
         print("ics_index: {}".format(ics_index))
