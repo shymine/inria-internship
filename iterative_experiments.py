@@ -38,14 +38,27 @@ def train_model(models_path, device):
     full_ic_optimizer, full_ic_scheduler = af.get_full_optimizer(full_ic_model, opti_param, lr_schedule_params)
     full_optimizer, full_scheduler = af.get_full_optimizer(full_model, opti_param, lr_schedule_params)
 
-    iter_model.train_func(iter_model, dataset, num_epochs, iter_optimizer, iter_scheduler, device)
-    full_ic_model.train_func(full_ic_model, dataset, num_epochs, full_ic_optimizer, full_ic_scheduler, device)
-    full_model.train_func(full_model, dataset, num_epochs, full_optimizer, full_scheduler, device)
+    iter_metrics = iter_model.train_func(iter_model, dataset, num_epochs, iter_optimizer, iter_scheduler, device)
+    full_ic_metrics = full_ic_model.train_func(full_ic_model, dataset, num_epochs, full_ic_optimizer, full_ic_scheduler, device)
+    full_metrics = full_model.train_func(full_model, dataset, num_epochs, full_optimizer, full_scheduler, device)
+
+    _link_metrics(iter_params, iter_metrics)
+    _link_metrics(full_ic_params, full_ic_metrics)
+    _link_metrics(full_params, full_metrics)
 
     arcs.save_model(iter_model, iter_params, models_path, iter_name, epoch=-1)
     arcs.save_model(full_ic_model, full_ic_params, models_path, full_ic_name, epoch=-1)
     arcs.save_model(full_model, full_params, models_path, full_name, epoch=-1)
-    return iter_model
+
+    return iter_model, full_ic_model, full_model
+
+def _link_metrics(params, metrics):
+    params['train_top1_acc'] = metrics['train_top1_acc']
+    params['train_top3_acc'] = metrics['train_top3_acc']
+    params['test_top1_acc'] = metrics['test_top1_acc']
+    params['test_top3_acc'] = metrics['test_top3_acc']
+    params['epoch_times'] = metrics['epoch_times']
+    params['lrs'] = metrics['lrs']
 
 def main():
     random_seed = af.get_random_seed()

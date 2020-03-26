@@ -413,7 +413,9 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
     metrics = {
         'epoch_times': [],
         'test_top1_acc': [],
+        'test_top3_acc': [],
         'train_top1_acc': [],
+        'train_top3_acc': [],
         'lrs': []
     }
     def calc_coeff(model):
@@ -444,13 +446,22 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
 
         top1_test, top3_test = sdn_test(model, data.test_loader, device)
         end_time = time.time()
+
         print('Top1 Test accuracies: {}'.format(top1_test))
         print('Top3 Test accuracies: {}'.format(top3_test))
         top1_train, top3_train = sdn_test(model, get_loader(data, augment), device)
         print('Top1 Train accuracies: {}'.format(top1_train))
         print('Top3 Train accuracies: {}'.format(top3_train))
+
         epoch_time = int(end_time - start_time)
         print('Epoch took {} seconds.'.format(epoch_time))
+
+        metrics['test_top1_acc'].append(top1_test)
+        metrics['test_top3_acc'].append(top3_test)
+        metrics['train_top1_acc'].append(top1_train)
+        metrics['train_top3_acc'].append(top3_train)
+        metrics['epoch_times'].append(epoch_time)
+        metrics['lrs'].append(cur_lr)
 
         if epoch in [25,50,75]: #,100,125,150]:
             grown_layers = model.grow()
@@ -458,6 +469,7 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
             optimizer.add_param_group({'params':grown_layers}) #= af.get_full_optimizer(model, optim_param2, scheduler_params)
             print("model grow")
             print("layers: {}".format(model.layers))
+    return metrics
 
 # def iter_training_step(optimizer, model, cur_coeffs, batch, device):
 #     b_x = batch[0].to(device)

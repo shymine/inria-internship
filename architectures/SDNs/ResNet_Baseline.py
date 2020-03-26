@@ -66,14 +66,14 @@ class ResNet_Baseline(nn.Module):
             self.train_func = mf.cnn_train
             layers = [self.block(self.in_channels,
                         16, (False, self.num_class, 32, 1)) for _ in range(self.total_size)]
-            self._init_weights(layers)
+            #self._init_weights(layers)
             self.layers.extend(layers)
             self.num_output = 1
         elif self.init_type == "full_ic":
             self.train_func = mf.sdn_train
             layers = [self.block(self.in_channels,
                         16, (self.ics[i], self.num_class, 32, 1)) for i in range(self.total_size)]
-            self.init_weights(layers)
+            #self.init_weights(layers)
             self.layers.extend(layers)
             self.num_output = sum(self.ics) + 1
         elif self.init_type == "iterative":
@@ -135,6 +135,7 @@ class ResNet_Baseline(nn.Module):
                 ics_index = ind
                 break
             if tmp == self.num_ics: # no more ICs are to be grown
+                print("Eval mode")
                 self.to_eval()
         for ic in self.ics[ics_index:]:
             nb_grow += 1
