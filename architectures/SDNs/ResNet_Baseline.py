@@ -72,7 +72,7 @@ class ResNet_Baseline(nn.Module):
         elif self.init_type == "full_ic":
             self.train_func = mf.sdn_train
             layers = [self.block(self.in_channels,
-                        16, (self.ics[i], 32, 1)) for i in range(self.total_size)]
+                        16, (self.ics[i], self.num_class, 32, 1)) for i in range(self.total_size)]
             self.init_weights(layers)
             self.layers.extend(layers)
             self.num_output = sum(self.ics) + 1
