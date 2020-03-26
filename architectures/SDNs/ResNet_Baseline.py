@@ -133,23 +133,28 @@ class ResNet_Baseline(nn.Module):
         tmp = 0
         for ind, ic in enumerate(self.ics):
             tmp += ic
+            print("loop ({}), tmp:{}, ic:{}".format(ind, tmp, ic))
             if tmp >= self.num_output:
                 ics_index = ind
                 break
             if tmp == self.num_ics: # no more ICs are to be grown
                 print("Eval mode")
                 self.to_eval()
+        print("ics_index: {}".format(ics_index))
+        print("iter on: {}".format(self.ics[ics_index:]))
         for ic in self.ics[ics_index:]:
             nb_grow += 1
             if ic:
                 add_ic = True
                 break
+        print("nb_grow: {}".format(nb_grow))
         layers = [
             self.block(self.in_channels,
                        16, (add_ic if i == nb_grow-1 else False,
                            self.num_class, 32, 1))
             for i in range(nb_grow)
         ]
+        print("grown layers: {}".format(layers))
         self._init_weights(layers)
         self.layers.extend(layers)
         self.num_output += 1
