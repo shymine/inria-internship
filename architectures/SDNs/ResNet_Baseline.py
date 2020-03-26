@@ -126,6 +126,7 @@ class ResNet_Baseline(nn.Module):
         add_ic = False
         ics_index = 0
         tmp = 0
+        print("num_output: {}".format(self.num_output))
         for ind, ic in enumerate(self.ics):
             tmp += ic
             if tmp >= self.num_output:
