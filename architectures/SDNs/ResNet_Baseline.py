@@ -38,7 +38,7 @@ class ResNet_Baseline(nn.Module):
             raise ValueError("final size of network does not match the length of ics array: {}; {}".format(self.total_size, self.ics))
 
         self.num_class = 10
-        self.train_func = mf.iter_training
+
         self.test_func = None
         self.num_output = 0
 
@@ -63,18 +63,21 @@ class ResNet_Baseline(nn.Module):
         self.end_layers = nn.Sequential(*end_layers)
 
         if self.init_type == "full":
+            self.train_func = mf.cnn_train
             layers = [self.block(self.in_channels,
                         16, (False, self.num_class, 32, 1)) for _ in range(self.total_size)]
             self._init_weights(layers)
             self.layers.extend(layers)
             self.num_output = 1
         elif self.init_type == "full_ic":
+            self.train_func = mf.sdn_train
             layers = [self.block(self.in_channels,
                         16, (self.ics[i], 32, 1)) for i in range(self.total_size)]
             self.init_weights(layers)
             self.layers.extend(layers)
             self.num_output = sum(self.ics) + 1
         elif self.init_type == "iterative":
+            self.train_func = mf.iter_training
             self.grow()
         else:
             raise KeyError("the init_type should be either 'full', 'full_ic' or 'iterative' and it is: {}".format(self.init_type))
@@ -126,30 +129,24 @@ class ResNet_Baseline(nn.Module):
         add_ic = False
         ics_index = 0
         tmp = 0
-        print("num_output: {}".format(self.num_output))
         for ind, ic in enumerate(self.ics):
             tmp += ic
-            # print("loop ({}), tmp:{}, ic:{}".format(ind, tmp, ic))
             if tmp >= self.num_output:
                 ics_index = ind
                 break
             if tmp == self.num_ics: # no more ICs are to be grown
                 self.to_eval()
-        print("ics_index: {}".format(ics_index))
-        print("iter on: {}".format(self.ics[ics_index:]))
         for ic in self.ics[ics_index:]:
             nb_grow += 1
             if ic:
                 add_ic = True
                 break
-        print("nb_grow: {}".format(nb_grow))
         layers = [
             self.block(self.in_channels,
                        16, (add_ic if i == nb_grow-1 else False,
                            self.num_class, 32, 1))
             for i in range(nb_grow)
         ]
-        print("grown layers: {}".format(layers))
         self._init_weights(layers)
         self.layers.extend(layers)
         self.num_output += 1

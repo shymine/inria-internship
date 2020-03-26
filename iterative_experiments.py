@@ -3,29 +3,48 @@ import network_architectures as arcs
 import model_funcs as mf
 
 def train_model(models_path, device):
+
     iter_model, iter_params = arcs.create_resnet_iterative(models_path, 'iterative', return_name=False)
+    full_ic_model, full_ic_params = arcs.create_resnet_iterative(models_path, 'full_ic', return_name=False)
+    full_model, full_params = arcs.create_resnet_iterative(models_path, 'full', return_name=False)
+    print("models iter, full_ic, full:\n{}\n{}\n{}".format(iter_model, full_ic_model, full_model))
+
     print("Training...")
-    dataset = af.get_dataset(iter_params['task'], 128)
+    dataset = af.get_dataset('cifar10', 128)
     lr = iter_params['learning_rate']/10 #0.01
     momentum = iter_params['momentum']
     weight_decay = iter_params['weight_decay']
     milestones = iter_params['milestones']
     gammas = iter_params['gammas']
     num_epochs = iter_params['epochs'] #100
-    model_name = iter_params['base_model']
     iter_params['optimizer'] = 'SGD'
 
+    iter_name = iter_params['base_model']
+    full_ic_name = full_ic_params['base_model']
+    full_name = full_params['base_model']
 
     opti_param = (lr, weight_decay, momentum, -1)
     lr_schedule_params = (milestones, gammas)
 
     iter_model.to(device)
-    #optimizer, scheduler = af.get_full_optimizer(trained_model, opti_param, lr_schedule_params)
-    trained_model_name = model_name + '_training'
+    full_ic_model.to(device)
+    full_model.to(device)
 
-    iter_model.train_func(iter_model, dataset, num_epochs, opti_param, lr_schedule_params, device)
+    iter_name = iter_name + '_training'
+    full_ic_name = full_ic_name + '_training'
+    full_name = full_name + '_training'
 
-    arcs.save_model(iter_model, iter_params, models_path, trained_model_name, epoch=-1)
+    iter_optimizer, iter_scheduler = af.get_full_optimizer(iter_model, opti_param, lr_schedule_params)
+    full_ic_optimizer, full_ic_scheduler = af.get_full_optimizer(full_ic_model, opti_param, lr_schedule_params)
+    full_optimizer, full_scheduler = af.get_full_optimizer(full_model, opti_param, lr_schedule_params)
+
+    iter_model.train_func(iter_model, dataset, num_epochs, iter_optimizer, iter_scheduler, device)
+    full_ic_model.train_func(full_ic_model, dataset, num_epochs, full_ic_optimizer, full_ic_scheduler, device)
+    full_model.train_func(full_model, dataset, num_epochs, full_optimizer, full_scheduler, device)
+
+    arcs.save_model(iter_model, iter_params, models_path, iter_name, epoch=-1)
+    arcs.save_model(full_ic_model, full_ic_params, models_path, full_ic_name, epoch=-1)
+    arcs.save_model(full_model, full_params, models_path, full_name, epoch=-1)
     return iter_model
 
 def main():
