@@ -116,17 +116,18 @@ class ResNet_SDN(nn.Module): #56 layers
         self.layers = nn.ModuleList()
         self.layers.extend(self._make_layer(self.in_channels, block_id=0, stride=1))
         
-        self.cur_input_size = int(self.cur_input_size/2)
-        self.layers.extend(self._make_layer(32, block_id=1, stride=2))
-        
-        self.cur_input_size = int(self.cur_input_size/2)
-        self.layers.extend(self._make_layer(64, block_id=2, stride=2))
+        # self.cur_input_size = int(self.cur_input_size/2)
+        # self.layers.extend(self._make_layer(32, block_id=1, stride=2))
+        #
+        # self.cur_input_size = int(self.cur_input_size/2)
+        # self.layers.extend(self._make_layer(64, block_id=2, stride=2))
         
         end_layers = []
         
         end_layers.append(nn.AvgPool2d(kernel_size=8))
         end_layers.append(af.Flatten())
-        end_layers.append(nn.Linear(64*self.block.expansion, self.num_classes))
+        end_layers.append(nn.Linear(16 * self.block.expansion, self.num_classes))
+        # end_layers.append(nn.Linear(64*self.block.expansion, self.num_classes))
         self.end_layers = nn.Sequential(*end_layers)
 
         if self.init_weights:
