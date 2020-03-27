@@ -58,7 +58,7 @@ class ResNet_Baseline(nn.Module):
         end_layers = []
         end_layers.append(nn.AvgPool2d(kernel_size=8))
         end_layers.append(af.Flatten())
-        end_layers.append(nn.Linear(16, self.num_class))
+        end_layers.append(nn.Linear(16*self.block.expansion, self.num_class))
 
         self.init_conv = nn.Sequential(*init_conv)
         self.layers = nn.ModuleList()
