@@ -103,8 +103,8 @@ def create_resnet56(models_path, task, save_type, get_params=False):
     print('Creating resnet56 untrained {} models...'.format(task))
     model_params = get_task_params(task)
     model_params['block_type'] = 'basic'
-    model_params['num_blocks'] = [9]#,9,9]
-    model_params['add_ic'] = [[0, 0, 0, 1, 0, 0, 0, 1, 0]] #, [0, 0, 1, 0, 0, 0, 1, 0, 0], [0, 1, 0, 0, 0, 1, 0, 0, 0]] # 15, 30, 45, 60, 75, 90 percent of GFLOPs
+    model_params['num_blocks'] = [9,9,9]
+    model_params['add_ic'] = [[0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 0, 1, 0, 0, 0, 1, 0, 0], [0, 1, 0, 0, 0, 1, 0, 0, 0]] # 15, 30, 45, 60, 75, 90 percent of GFLOPs
 
     model_name = '{}_resnet56'.format(task)
 
