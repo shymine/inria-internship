@@ -106,11 +106,6 @@ class ResNet_Baseline(nn.Module):
             fwd, is_output, output = layer(fwd)
             if is_output:
                 outputs.append(output)
-        print("problem before end_layer")
-        print("fwd shape: {}".format(fwd.size()))
-        print("end_layer[1]: {}".format(self.end_layers[1]))
-        print("end_layer[2]: {}".format(self.end_layers[2]))
-        print("end layers' shape: {}".format([p.size() for i in range(3) for p in self.end_layers[i].parameters(True)]))
         fwd = self.end_layers(fwd)
         outputs.append(fwd)
         return outputs
