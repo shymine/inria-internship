@@ -8,7 +8,7 @@ def train_model(models_path, device):
     full_ic_model, full_ic_params = arcs.create_resnet_iterative(models_path, 'full_ic', return_name=False)
     # full_model, full_params = arcs.create_resnet_iterative(models_path, 'full', return_name=False)
     # print("models iter, full_ic, full:\n{}\n{}\n{}".format(iter_model, full_ic_model, full_model))
-
+    print("full_ic: {}".format(full_ic_model))
     print("Training...")
     dataset = af.get_dataset('cifar10', 128)
     lr = iter_params['learning_rate']/10 #0.01
