@@ -106,6 +106,9 @@ class ResNet_Baseline(nn.Module):
             fwd, is_output, output = layer(fwd)
             if is_output:
                 outputs.append(output)
+	print("problem before end_layer")
+	print("fwd shape: {}".format(fwd.size()))
+        print("first end layer shape: {}".format(self.end_layers[0].parameters().size()))
         fwd = self.end_layers(fwd)
         outputs.append(fwd)
         return outputs
@@ -137,9 +140,10 @@ class ResNet_Baseline(nn.Module):
             if tmp >= self.num_output:
                 ics_index = ind
                 break
-            if tmp == self.num_ics: # no more ICs are to be grown
-                print("Eval mode")
-                self.to_eval()
+        print("tmp: {}, num_ics: {}".format(tmp, self.num_ics))
+        if tmp == self.num_ics: # no more ICs are to be grown
+            print("Eval mode")
+            self.to_eval()
         print("ics_index: {}".format(ics_index))
         print("iter on: {}".format(self.ics[ics_index:]))
         pos = 1
