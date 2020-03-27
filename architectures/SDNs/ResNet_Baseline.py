@@ -142,7 +142,10 @@ class ResNet_Baseline(nn.Module):
                 self.to_eval()
         print("ics_index: {}".format(ics_index))
         print("iter on: {}".format(self.ics[ics_index:]))
-        for ic in self.ics[ics_index:]:
+        pos = 1
+        if ics_index == 0:
+            pos = 0
+        for ic in self.ics[ics_index+pos:]:
             nb_grow += 1
             if ic:
                 add_ic = True
