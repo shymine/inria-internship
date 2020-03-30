@@ -52,3 +52,18 @@ def snip(model, keep_ratio, train_dataloader, loss, device="cpu"):
     print(torch.sum(torch.cat([torch.flatten(x == 1) for x in keep_masks])))
 
     return (keep_masks)
+
+def apply_prune_mask(model, masks):
+    prunable_layers = filter(
+        lambda layer: isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear),
+        model.modules()
+    )
+
+    for layer, mask in zip(prunable_layers, masks):
+        assert (layer.weight.shape == mask.shape)
+        def hook_factory(mask):
+            def hook(grads):
+                return grads*mask
+            return hook
+        layer.weight.data[mask == 0.] = 0.
+        layer.weight.register_hook(hook_factory(mask))
