@@ -21,7 +21,7 @@ def train_model(models_path, device):
 
     model_params['optimizer'] = 'SGD'
 
-    opti_param = (lr, weight_decay, momentum)
+    opti_param = (lr, weight_decay, momentum, -1)
     lr_schedule_params = (milestones, gammas)
 
     optimizer, scheduler = af.get_full_optimizer(trained_model, opti_param, lr_schedule_params)

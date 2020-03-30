@@ -27,6 +27,8 @@ from architectures.CNNs.MobileNet import MobileNet
 from architectures.SDNs.WideResNet_SDN import WideResNet_SDN
 from architectures.CNNs.WideResNet import WideResNet
 
+from architectures.SDNs.ResNet_Baseline import ResNet_Baseline
+
 
 def save_networks(model_name, model_params, models_path, save_type):
     cnn_name = model_name+'_cnn'
@@ -160,15 +162,25 @@ def create_mobilenet(models_path, task, save_type, get_params=False):
 
     return save_networks(model_name, model_params, models_path, save_type)
 
-def create_resnet_iterative(models_path):
+def create_resnet_iterative(models_path, type, return_name=True):
     print('Creating Resnet for iterative training for cifar10')
     model_params = get_task_params('cifar10')
     model_name = '{}_resnet_iterative'.format('cifar10')
-    model_params['network_type'] = 'resnet'
+    model_params['network_type'] = 'resnet_iterative'
     model_params['augment_training'] = True
     model_params['init_weights'] = True
     model_params['block_type'] = 'basic'
-    model_params['num_blocks'] = []
+    get_lr_params(model_params)
+    model_params['base_model'] = model_name
+    model_params['init_type'] = type
+    model_params['size'] = 9
+    model_params['ics'] = [0,0,1,0,0,1,0,1,0]
+
+    model = ResNet_Baseline(model_params)
+
+    save_model(model, model_params, models_path, model_name, 0)
+    return model_name if return_name else model, model_params
+
 
 def get_task_params(task):
     if task == 'cifar10':

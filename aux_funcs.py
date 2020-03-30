@@ -231,12 +231,13 @@ def get_full_optimizer(model, lr_params, stepsize_params):
     lr=lr_params[0]
     weight_decay=lr_params[1]
     momentum=lr_params[2]
+    epoch=lr_params[3]
 
     milestones = stepsize_params[0]
     gammas = stepsize_params[1]
 
     optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, momentum=momentum, weight_decay=weight_decay)
-    scheduler = MultiStepMultiLR(optimizer, milestones=milestones, gammas=gammas)
+    scheduler = MultiStepMultiLR(optimizer, milestones=milestones, gammas=gammas, last_epoch=epoch)
 
     return optimizer, scheduler
 

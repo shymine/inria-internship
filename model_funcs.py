@@ -1,6 +1,7 @@
 # model_funcs.py
 # implements the functions for training, testing SDNs and CNNs
 # also implements the functions for computing confusion and confidence
+import sys
 
 import torch
 import math
@@ -406,3 +407,82 @@ def cnn_get_confidence(model, loader, device='cpu'):
 
    
     return correct, wrong, instance_confidence
+
+def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
+    augment = model.augment_training
+    metrics = {
+        'epoch_times': [],
+        'test_top1_acc': [],
+        'test_top3_acc': [],
+        'train_top1_acc': [],
+        'train_top3_acc': [],
+        'lrs': []
+    }
+    def calc_coeff(model):
+        return [0.01+(1/model.num_output)*(i+1) for i in range(model.num_output-1)]
+    # max tau: % of the network for the IC -> if 3 outputs: 0.33, 0.66, 1
+    max_coeffs = calc_coeff(model)
+    print('max_coeffs: {}'.format(max_coeffs))
+    print('layers: {}'.format(model.layers))
+    model.to(device)
+    model.to_train()
+    for epoch in range(1, epochs+1):
+        scheduler.step()
+        cur_lr = af.get_lr(optimizer)
+        print('\nEpoch: {}/{}'.format(epoch, epochs))
+        print('cur_lr: {}'.format(cur_lr))
+        max_coeffs = calc_coeff(model)
+        cur_coeffs = 0.01 + epoch*(np.array(max_coeffs)/epochs)
+        cur_coeffs = np.minimum(max_coeffs, cur_coeffs)
+        print("current coeffs: {}".format(cur_coeffs))
+
+        start_time = time.time()
+        model.train()
+        loader = get_loader(data, augment)
+        for i, batch in enumerate(loader):
+            total_loss = sdn_training_step(optimizer, model, cur_coeffs, batch, device) #iter_training_step()
+            if i%100 == 0:
+                print("Loss: {}".format(total_loss))
+
+        top1_test, top3_test = sdn_test(model, data.test_loader, device)
+        end_time = time.time()
+
+        print('Top1 Test accuracies: {}'.format(top1_test))
+        print('Top3 Test accuracies: {}'.format(top3_test))
+        top1_train, top3_train = sdn_test(model, get_loader(data, augment), device)
+        print('Top1 Train accuracies: {}'.format(top1_train))
+        print('Top3 Train accuracies: {}'.format(top3_train))
+
+        epoch_time = int(end_time - start_time)
+        print('Epoch took {} seconds.'.format(epoch_time))
+
+        metrics['test_top1_acc'].append(top1_test)
+        metrics['test_top3_acc'].append(top3_test)
+        metrics['train_top1_acc'].append(top1_train)
+        metrics['train_top3_acc'].append(top3_train)
+        metrics['epoch_times'].append(epoch_time)
+        metrics['lrs'].append(cur_lr)
+
+        if epoch in [25,50,75]: #,100,125,150]:
+            grown_layers = model.grow()
+            model.to(device)
+            optimizer.add_param_group({'params':grown_layers}) #= af.get_full_optimizer(model, optim_param2, scheduler_params)
+            print("model grow")
+            print("layers: {}".format(model.layers))
+    return metrics
+
+# def iter_training_step(optimizer, model, cur_coeffs, batch, device):
+#     b_x = batch[0].to(device)
+#     b_y = batch[1].to(device)
+#     output = model(b_x)
+#     print("output: {}".format(output))
+#     optimizer.zero_grad()
+#     total_loss = 0.0
+#     for ic_id in range(model.num_output-1):
+#         cur_output = output[ic_id]
+#         cur_loss = float(cur_coeffs[ic_id])*af.get_loss_criterion()(cur_output, b_y)
+#         total_loss += cur_loss
+#     total_loss += af.get_loss_criterion()(output[-1], b_y)
+#     total_loss.backward()
+#     optimizer.step()
+#     return total_loss
