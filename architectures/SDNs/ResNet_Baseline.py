@@ -41,7 +41,6 @@ class ResNet_Baseline(nn.Module):
 
         self.num_class = 10
 
-        self.test_func = None
         self.num_output = 0
 
         if self.block_type == 'basic':
@@ -66,6 +65,7 @@ class ResNet_Baseline(nn.Module):
 
         if self.init_type == "full":
             self.train_func = mf.cnn_train
+            self.test_func = mf.cnn_test
             layers = [self.block(self.in_channels,
                         16, (False, self.num_class, 32, 1)) for _ in range(self.total_size)]
             #self._init_weights(layers)
@@ -73,6 +73,7 @@ class ResNet_Baseline(nn.Module):
             self.num_output = 1
         elif self.init_type == "full_ic":
             self.train_func = mf.sdn_train
+            self.test_func = mf.sdn_test
             layers = [self.block(self.in_channels,
                         16, (self.ics[i], self.num_class, 32, 1)) for i in range(self.total_size)]
             #self.init_weights(layers)
@@ -80,6 +81,7 @@ class ResNet_Baseline(nn.Module):
             self.num_output = sum(self.ics) + 1
         elif self.init_type == "iterative":
             self.train_func = mf.iter_training
+            self.test_func = mf.sdn_test
             self.grow()
         else:
             raise KeyError("the init_type should be either 'full', 'full_ic' or 'iterative' and it is: {}".format(self.init_type))
