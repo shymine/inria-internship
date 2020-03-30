@@ -291,7 +291,7 @@ def cnn_training_step(model, optimizer, data, labels, device='cpu', list=False):
     optimizer.step()                # apply gradients
 
 
-def cnn_train(model, data, epochs, optimizer, scheduler, device='cpu'):
+def cnn_train(model, data, epochs, optimizer, scheduler, device='cpu', list=False):
     metrics = {'epoch_times':[], 'test_top1_acc':[], 'test_top3_acc':[], 'train_top1_acc':[], 'train_top3_acc':[], 'lrs':[]}
 
     for epoch in range(1, epochs+1):
@@ -309,7 +309,7 @@ def cnn_train(model, data, epochs, optimizer, scheduler, device='cpu'):
         print('Epoch: {}/{}'.format(epoch, epochs))
         print('Cur lr: {}'.format(cur_lr))
         for x, y in train_loader:
-            cnn_training_step(model, optimizer, x, y, device)
+            cnn_training_step(model, optimizer, x, y, device, list)
         
         end_time = time.time()
     

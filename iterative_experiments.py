@@ -39,7 +39,7 @@ def train_model(models_path, device):
 
     iter_metrics = iter_model.train_func(iter_model, dataset, num_epochs, iter_optimizer, iter_scheduler, device)
     full_ic_metrics = full_ic_model.train_func(full_ic_model, dataset, num_epochs, full_ic_optimizer, full_ic_scheduler, device)
-    full_metrics = full_model.train_func(full_model, dataset, num_epochs, full_optimizer, full_scheduler, device)
+    full_metrics = full_model.train_func(full_model, dataset, num_epochs, full_optimizer, full_scheduler, device, True)
 
     _link_metrics(iter_params, iter_metrics)
     _link_metrics(full_ic_params, full_ic_metrics)
