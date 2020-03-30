@@ -280,10 +280,10 @@ def sdn_test_early_exits(model, loader, device='cpu'):
 
     return top1_acc, top3_acc, early_output_counts, non_conf_output_counts, total_time
 
-def cnn_training_step(model, optimizer, data, labels, device='cpu'):
+def cnn_training_step(model, optimizer, data, labels, device='cpu', list=False):
     b_x = data.to(device)   # batch x
     b_y = labels.to(device)   # batch y
-    output = model(b_x)            # cnn final output
+    output = model(b_x) if not list else model(b_x)[0]          # cnn final output
     criterion = af.get_loss_criterion()
     loss = criterion(output, b_y)   # cross entropy loss
     optimizer.zero_grad()           # clear gradients for this training step
