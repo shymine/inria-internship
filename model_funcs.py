@@ -68,6 +68,7 @@ def get_loader(data, augment):
 
 def sdn_train(model, data, epochs, optimizer, scheduler, device='cpu'):
     augment = model.augment_training
+    print("sdn training")
     metrics = {'epoch_times':[], 'test_top1_acc':[], 'test_top3_acc':[], 'train_top1_acc':[], 'train_top3_acc':[], 'lrs':[]}
     max_coeffs = np.array([0.15, 0.3, 0.45, 0.6, 0.75, 0.9]) # max tau_i --- C_i values
 
@@ -293,7 +294,7 @@ def cnn_training_step(model, optimizer, data, labels, device='cpu', list=False):
 
 def cnn_train(model, data, epochs, optimizer, scheduler, device='cpu', list=False):
     metrics = {'epoch_times':[], 'test_top1_acc':[], 'test_top3_acc':[], 'train_top1_acc':[], 'train_top3_acc':[], 'lrs':[]}
-
+    print("cnn training")
     for epoch in range(1, epochs+1):
         scheduler.step()
 
@@ -357,6 +358,8 @@ def cnn_test_time(model, loader, device='cpu'):
 
 
 def cnn_test(model, loader, device='cpu'):
+    print("cnn test")
+    print("full model: {}".format(model))
     model.eval()
     top1 = data.AverageMeter()
     top3 = data.AverageMeter()
@@ -411,6 +414,7 @@ def cnn_get_confidence(model, loader, device='cpu'):
     return correct, wrong, instance_confidence
 
 def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
+    print("iter training")
     augment = model.augment_training
     metrics = {
         'epoch_times': [],
