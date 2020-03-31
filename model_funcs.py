@@ -421,6 +421,8 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
         'train_top3_acc': [],
         'lrs': []
     }
+    epoch_growth = [i*epochs/(model.num_ics+1) for i in range(model.num_ics)]
+    print("epochs growth: {}".format(epoch_growth))
     def calc_coeff(model):
         return [0.01+(1/model.num_output)*(i+1) for i in range(model.num_output-1)]
     # max tau: % of the network for the IC -> if 3 outputs: 0.33, 0.66, 1
@@ -466,7 +468,7 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
         metrics['epoch_times'].append(epoch_time)
         metrics['lrs'].append(cur_lr)
 
-        if epoch in [25,50,75]: #,100,125,150]:
+        if epoch in epoch_growth:
             grown_layers = model.grow()
             model.to(device)
             optimizer.add_param_group({'params':grown_layers}) #= af.get_full_optimizer(model, optim_param2, scheduler_params)

@@ -37,7 +37,7 @@ def train_model(models_path, device):
     full_ic_optimizer, full_ic_scheduler = af.get_full_optimizer(full_ic_model, opti_param, lr_schedule_params)
     full_optimizer, full_scheduler = af.get_full_optimizer(full_model, opti_param, lr_schedule_params)
 
-    iter_metrics = iter_model.train_func(iter_model, dataset, num_epochs, iter_optimizer, iter_scheduler, device)
+    iter_metrics = iter_model.train_func(iter_model, dataset, 200, iter_optimizer, iter_scheduler, device)
     full_ic_metrics = full_ic_model.train_func(full_ic_model, dataset, num_epochs, full_ic_optimizer, full_ic_scheduler, device)
     full_metrics = full_model.train_func(full_model, dataset, num_epochs, full_optimizer, full_scheduler, device, True)
 
