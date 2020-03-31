@@ -23,7 +23,7 @@ def train(models_path, device):
 
     model_name = model_name + '_training'
 
-    mask = snip.snip(model, 0.1, dataset, device)
+    mask = snip.snip(model, 0.1, dataset.test_loader, device)
     snip.apply_prune_mask(model, mask)
 
     print("pruning done")
