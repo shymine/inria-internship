@@ -46,3 +46,6 @@ def main():
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
     train(models_path, device)
+
+if __name__ == "__main__":
+    main()
