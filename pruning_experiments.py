@@ -26,6 +26,8 @@ def train(models_path, device):
     mask = snip.snip(model, 0.1, dataset, device)
     snip.apply_prune_mask(model, mask)
 
+    print("pruning done")
+
     optimizer, scheduler = af.get_full_optimizer(model, opti_param, lr_schedule_params)
 
     metrics = model.train_func(model, dataset, num_epochs, optimizer, scheduler, device)
