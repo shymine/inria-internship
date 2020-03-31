@@ -421,7 +421,7 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
         'train_top3_acc': [],
         'lrs': []
     }
-    epoch_growth = [i*epochs/(model.num_ics+1) for i in range(model.num_ics)]
+    epoch_growth = [(i+1)*epochs/(model.num_ics+1) for i in range(model.num_ics)]
     print("epochs growth: {}".format(epoch_growth))
     def calc_coeff(model):
         return [0.01+(1/model.num_output)*(i+1) for i in range(model.num_output-1)]
