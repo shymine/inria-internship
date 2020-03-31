@@ -358,8 +358,6 @@ def cnn_test_time(model, loader, device='cpu'):
 
 
 def cnn_test(model, loader, device='cpu'):
-    print("cnn test")
-    print("full model: {}".format(model))
     model.eval()
     top1 = data.AverageMeter()
     top3 = data.AverageMeter()
@@ -369,7 +367,6 @@ def cnn_test(model, loader, device='cpu'):
             b_x = batch[0].to(device)
             b_y = batch[1].to(device)
             output = model(b_x)
-            print("output: {}".format(output))
 
             prec1, prec3 = data.accuracy(output, b_y, topk=(1, 3))
             top1.update(prec1[0], b_x.size(0))

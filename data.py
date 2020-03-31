@@ -155,8 +155,6 @@ def accuracy(output, target, topk=(1,)):
     with torch.no_grad():
         maxk = max(topk)
         batch_size = target.size(0)
-        # print(output)
-        # print(target)
         if isinstance(output, list) and len(output) == 1:
             output = output[0]
         _, pred = output.topk(maxk, 1, True, True) # pred are the indices of the best k elements
