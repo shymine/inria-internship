@@ -164,25 +164,3 @@ class ResNet_Baseline(nn.Module):
         self.num_output += 1
         return filter(lambda p: p.requires_grad, [p for l in layers for p in l.parameters(True)])
 
-    # Not needed anymore as grow itself work well
-    # def grow_copy(self, add_ic=True):
-    #     model = ResNet_Baseline({
-    #         'augment_training':self.augment_training,
-    #         'init_weights': False,
-    #         'block_type': 'basic'#,
-    #         # 'size': self.num_output,
-    #         # 'init_type': self.init_type
-    #     })
-    #     for i in range(self.num_output):
-    #         model.grow(add_ic=True if hasattr(self.layers[3*i+2], 'output') else False)
-    #     with torch.no_grad():
-    #         for id, layer in enumerate(self.init_conv):
-    #             if hasattr(layer, 'weight'):
-    #                 model.init_conv[id].weight.copy_(layer.weigh)
-    #         for id, unit in enumerate(self.layers):
-    #             for id2, layer in enumerate(unit):
-    #                 if hasattr(layer, 'weight'):
-    #                     model.layers[id][id2].weight.copy_(layer.weight)
-    #     self.init_conv = model.init_conv
-    #     self.layers = model.layers
-    #     return filter(lambda p: p.requires_grad, model.parameters())
