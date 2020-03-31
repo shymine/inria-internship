@@ -157,7 +157,7 @@ def accuracy(output, target, topk=(1,)):
         batch_size = target.size(0)
         # print(output)
         # print(target)
-        output = torch.tensor(output)
+        output = torch.new_tensor(output)
         _, pred = output.topk(maxk, 1, True, True) # pred are the indices of the best k elements
         pred = pred.t()
     
