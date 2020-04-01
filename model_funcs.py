@@ -282,7 +282,7 @@ def sdn_test_early_exits(model, loader, device='cpu'):
 
     return top1_acc, top3_acc, early_output_counts, non_conf_output_counts, total_time
 
-def cnn_training_step(model, optimizer, data, labels, device='cpu', list=False):
+def cnn_training_step(model, optimizer, data, labels, device='cpu', islist=False):
     b_x = data.to(device)   # batch x
     b_y = labels.to(device)   # batch y
     output = model(b_x)
@@ -295,7 +295,7 @@ def cnn_training_step(model, optimizer, data, labels, device='cpu', list=False):
     optimizer.step()                # apply gradients
 
 
-def cnn_train(model, data, epochs, optimizer, scheduler, device='cpu', list=False):
+def cnn_train(model, data, epochs, optimizer, scheduler, device='cpu'):
     metrics = {'epoch_times':[], 'test_top1_acc':[], 'test_top3_acc':[], 'train_top1_acc':[], 'train_top3_acc':[], 'lrs':[]}
 
     for epoch in range(1, epochs+1):
@@ -313,7 +313,7 @@ def cnn_train(model, data, epochs, optimizer, scheduler, device='cpu', list=Fals
         print('Epoch: {}/{}'.format(epoch, epochs))
         print('Cur lr: {}'.format(cur_lr))
         for x, y in train_loader:
-            cnn_training_step(model, optimizer, x, y, device, list)
+            cnn_training_step(model, optimizer, x, y, device)
         
         end_time = time.time()
     
