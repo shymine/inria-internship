@@ -3,6 +3,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import copy
+import types
+
+def snip_forward_conv2d(self, x):
+    return F.conv2d(x, self.weight * self.weight_mask, self.bias,
+                    self.stride, self.padding, self.dilation, self.groups)
+
+def snip_forward_linear(self, x):
+    return F.linear(x, self.weight * self.weight_mask, self.bias)
 
 def snip(model, keep_ratio, train_dataloader, loss, device="cpu"):
     inputs, targets = next(iter(train_dataloader))
@@ -17,9 +25,9 @@ def snip(model, keep_ratio, train_dataloader, loss, device="cpu"):
             nn.init.xavier_normal_(layer.weight)
             layer.weight.requires_grad = False
             if conv2:
-                layer.forward = model.snip_forward_conv2d
+                layer.forward = types.MethodType(snip_forward_conv2d, layer)
             if lin:
-                layer.forward = model.snip_forward_linear
+                layer.forward = types.MethodType(snip_forward_linear, layer)
 
     network.zero_grad()
     outputs = network(inputs)
