@@ -4,8 +4,6 @@ import torch.nn.functional as F
 
 import copy
 
-from architectures.SDNs.ResNet_Baseline import
-
 def snip(model, keep_ratio, train_dataloader, loss, device="cpu"):
     inputs, targets = next(iter(train_dataloader))
     inputs, targets = inputs.to(device), targets.to(device)
