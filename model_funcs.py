@@ -287,6 +287,8 @@ def cnn_training_step(model, optimizer, data, labels, device='cpu', list=False):
     b_y = labels.to(device)   # batch y
     output = model(b_x) if not list else model(b_x)[0]          # cnn final output
     criterion = af.get_loss_criterion()
+    print("criterion: {}".format(criterion))
+    print("output cnn_tr_step: {}".format(output))
     loss = criterion(output, b_y)   # cross entropy loss
     optimizer.zero_grad()           # clear gradients for this training step
     loss.backward()                 # backpropagation, compute gradients
@@ -476,7 +478,7 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
 def sdn_loss(output, label, coeffs=None):
     total_loss = 0.0
     if coeffs == None:
-        coeffs = [1 for _ in range(len(output)-1)] if len(output) !=1 else [1]
+        coeffs = [1 for _ in range(len(output)-1)]
     for ic_id in range(len(output)-1):
         total_loss += float(coeffs[ic_id])*af.get_loss_criterion()(output[ic_id], label)
     total_loss += af.get_loss_criterion()(output[-1], label)
