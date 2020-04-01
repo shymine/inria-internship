@@ -1,5 +1,6 @@
 import aux_funcs as af
 import network_architectures as arcs
+import model_funcs as mf
 import snip
 
 def train(models_path, device):
@@ -23,7 +24,7 @@ def train(models_path, device):
 
     model_name = model_name + '_training'
 
-    mask = snip.snip(model, 0.1, dataset.test_loader, device)
+    mask = snip.snip(model, 0.1, dataset.test_loader, mf.sdn_loss, device)
     snip.apply_prune_mask(model, mask)
 
     print("pruning done")

@@ -39,6 +39,7 @@ def sdn_training_step(optimizer, model, coeffs, batch, device):
 
     return total_loss
 
+
 def sdn_ic_only_step(optimizer, model, batch, device):
     b_x = batch[0].to(device)
     b_y = batch[1].to(device)
