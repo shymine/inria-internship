@@ -410,7 +410,7 @@ def cnn_get_confidence(model, loader, device='cpu'):
    
     return correct, wrong, instance_confidence
 
-def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
+def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
     print("iter training")
     augment = model.augment_training
     metrics = {
@@ -421,7 +421,7 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
         'train_top3_acc': [],
         'lrs': []
     }
-    epoch_growth = [(i+1)*epochs/(model.num_ics+1) for i in range(model.num_ics)]
+    epoch_growth = [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
     print("array params: num_ics {}, epochs {}".format(model.num_ics, epochs))
     print("epochs growth: {}".format(epoch_growth))
     def calc_coeff(model):
@@ -477,18 +477,14 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
             print("layers: {}".format(model.layers))
     return metrics
 
-# def iter_training_step(optimizer, model, cur_coeffs, batch, device):
-#     b_x = batch[0].to(device)
-#     b_y = batch[1].to(device)
-#     output = model(b_x)
-#     print("output: {}".format(output))
-#     optimizer.zero_grad()
-#     total_loss = 0.0
-#     for ic_id in range(model.num_output-1):
-#         cur_output = output[ic_id]
-#         cur_loss = float(cur_coeffs[ic_id])*af.get_loss_criterion()(cur_output, b_y)
-#         total_loss += cur_loss
-#     total_loss += af.get_loss_criterion()(output[-1], b_y)
-#     total_loss.backward()
-#     optimizer.step()
-#     return total_loss
+def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu', epoch_growth=None):
+    return ""
+
+def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu', epoch_growth=None):
+    return ""
+
+def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu', epoch_growth=None):
+    return ""
+
+def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu', epoch_growth=None):
+    return ""

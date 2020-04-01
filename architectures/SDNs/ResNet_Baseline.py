@@ -36,6 +36,9 @@ class ResNet_Baseline(nn.Module):
         self.ics = params['ics'] if 'ics' in params else []
         self.num_ics = sum(self.ics)
 
+        if 'mode' in params:
+            self.mode = params['mode']
+
         if self.init_type != 'full' and len(self.ics) != self.total_size:
             raise ValueError("final size of network does not match the length of ics array: {}; {}".format(self.total_size, self.ics))
 
@@ -63,12 +66,19 @@ class ResNet_Baseline(nn.Module):
         self.layers = nn.ModuleList()
         self.end_layers = nn.Sequential(*end_layers)
 
+        train_funcs = {
+            0: mf.iter_training_0,
+            1: mf.iter_training_1,
+            2: mf.iter_training_2,
+            3: mf.iter_training_3,
+            4: mf.iter_training_4
+        }
+
         if self.init_type == "full":
             self.train_func = mf.cnn_train
             self.test_func = mf.cnn_test
             layers = [self.block(self.in_channels,
                         16, (False, self.num_class, 32, 1)) for _ in range(self.total_size)]
-            #self._init_weights(layers)
             self.layers.extend(layers)
             self.num_output = 1
         elif self.init_type == "full_ic":
@@ -76,11 +86,10 @@ class ResNet_Baseline(nn.Module):
             self.test_func = mf.sdn_test
             layers = [self.block(self.in_channels,
                         16, (self.ics[i], self.num_class, 32, 1)) for i in range(self.total_size)]
-            #self.init_weights(layers)
             self.layers.extend(layers)
             self.num_output = sum(self.ics) + 1
         elif self.init_type == "iterative":
-            self.train_func = mf.iter_training
+            self.train_func = train_funcs[self.mode]
             self.test_func = mf.sdn_test
             self.grow()
         else:

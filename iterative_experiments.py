@@ -1,9 +1,19 @@
+import sys
+import getopt
+
 import aux_funcs as af
 import network_architectures as arcs
 import model_funcs as mf
 
-def train_model(models_path, device):
+"""
+Tests to do:
+- train every layer for 100 epochs
+- train for 100 epochs after a new layer is added and freeze the previous layers
+- train for 50 epochs between growth and freeze the previous layers, 100 epochs of full training
+- grow every 50, freeze the 25 first and learn the 25 others for beneath layers
+"""
 
+def train_model(models_path, device, mode):
     iter_model, iter_params = arcs.create_resnet_iterative(models_path, 'iterative', return_name=False)
     full_ic_model, full_ic_params = arcs.create_resnet_iterative(models_path, 'full_ic', return_name=False)
     full_model, full_params = arcs.create_resnet_iterative(models_path, 'full', return_name=False)
@@ -37,7 +47,7 @@ def train_model(models_path, device):
     full_ic_optimizer, full_ic_scheduler = af.get_full_optimizer(full_ic_model, opti_param, lr_schedule_params)
     full_optimizer, full_scheduler = af.get_full_optimizer(full_model, opti_param, lr_schedule_params)
 
-    iter_metrics = iter_model.train_func(iter_model, dataset, 200, iter_optimizer, iter_scheduler, device)
+    iter_metrics = iter_model.train_func(iter_model, dataset, num_epochs, iter_optimizer, iter_scheduler, device)
     full_ic_metrics = full_ic_model.train_func(full_ic_model, dataset, num_epochs, full_ic_optimizer, full_ic_scheduler, device)
     full_metrics = full_model.train_func(full_model, dataset, num_epochs, full_optimizer, full_scheduler, device, True)
 
@@ -59,12 +69,22 @@ def _link_metrics(params, metrics):
     params['epoch_times'] = metrics['epoch_times']
     params['lrs'] = metrics['lrs']
 
-def main():
+def main(mode):
     random_seed = af.get_random_seed()
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
-    iter, full_ic, full = train_model(models_path, device)
+    iter, full_ic, full = train_model(models_path, device, mode)
     print("accuracies:\niter: {}, full_ic: {}, full: {}".format(iter[1]['test_top1_acc'][-1], full_ic[1]['test_top1_acc'][-1], full[1]['test_top1_acc'][-1]))
 
 if __name__ == '__main__':
-    main()
+    try:
+        optlist, args = getopt.getopt(sys.argv[1:], 'm:')
+    except getopt.GetoptError as err:
+        print(err)
+        sys.exit(2)
+    mode = 0
+    for opt, arg in optlist:
+        if opt == "-m":
+            mode = arg
+
+    main(mode)
