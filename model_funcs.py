@@ -370,6 +370,8 @@ def cnn_test(model, loader, device='cpu'):
             b_x = batch[0].to(device)
             b_y = batch[1].to(device)
             output = model(b_x)
+            if isinstance(output, list):
+                output = output[0]
             prec1, prec3 = data.accuracy(output, b_y, topk=(1, 3))
             top1.update(prec1[0], b_x.size(0))
             top3.update(prec3[0], b_x.size(0))
