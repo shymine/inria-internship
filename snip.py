@@ -29,6 +29,7 @@ def snip(model, keep_ratio, train_dataloader, loss, device="cpu"):
             if lin:
                 layer.forward = types.MethodType(snip_forward_linear, layer)
 
+    network.to(device)
     network.zero_grad()
     outputs = network(inputs)
     total_loss = loss(outputs, targets)
