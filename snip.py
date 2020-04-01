@@ -32,7 +32,6 @@ def snip(model, keep_ratio, train_dataloader, loss, device="cpu"):
     network.to(device)
     network.zero_grad()
     outputs = network(inputs)
-    print("outputs: {}\ntargets: {}".format(outputs, targets))
     total_loss = loss(outputs, targets)
     total_loss.backward()
 
@@ -51,8 +50,6 @@ def snip(model, keep_ratio, train_dataloader, loss, device="cpu"):
     keep_masks = []
     for g in grads_abs:
         keep_masks.append(((g / norm_factor) >= acceptable_score).float())
-    print("masks: {}".format(keep_masks))
-    print(torch.sum(torch.cat([torch.flatten(x == 1) for x in keep_masks])))
 
     return (keep_masks)
 
