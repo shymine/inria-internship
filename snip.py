@@ -32,6 +32,7 @@ def snip(model, keep_ratio, train_dataloader, loss, device="cpu"):
     network.to(device)
     network.zero_grad()
     outputs = network(inputs)
+    print("outputs: {}\ntargets: {}".format(outputs, targets))
     total_loss = loss(outputs, targets)
     total_loss.backward()
 
