@@ -488,7 +488,7 @@ def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
     }
     epoch_growth = [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
     print("epoch growth: {}".format(epoch_growth))
-    freeze_epochs = (np.array([0, 25, 50])+epochs).tolist
+    freeze_epochs = (np.array([0, 25, 50])+epochs).tolist()
     max_coeffs = calc_coeff(model)
 
     model.to(device)
