@@ -487,13 +487,14 @@ def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
         'lrs': []
     }
     epoch_growth = [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
+    print("epoch growth: {}".format(epoch_growth))
     freeze_epochs = (np.array([0, 25, 50])+epochs).tolist
     max_coeffs = calc_coeff(model)
 
     model.to(device)
     model.to_train()
 
-    for epoch in range(epoch_growth[-1]+epochs):
+    for epoch in range(int(epoch_growth[-1])+epochs):
         scheduler.step()
         cur_lr = af.get_lr(optimizer)
         print('\nEpoch: {}/{}'.format(epoch, epochs))
