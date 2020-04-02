@@ -507,7 +507,7 @@ def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
         start_time = time.time()
         model.train()
         loader = get_loader(data, augment)
-        for i, batch in enumerate(data, loader):
+        for i, batch in enumerate(loader):
             total_loss = sdn_training_step(optimizer, model, cur_coeffs, batch, device)
             if i%100 == 0:
                 print("Loss: {}".format(total_loss))
