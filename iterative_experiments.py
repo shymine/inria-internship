@@ -14,7 +14,7 @@ Tests to do:
 """
 
 def train_model(models_path, device, mode):
-    iter_model, iter_params = arcs.create_resnet_iterative(models_path, 'iterative', return_name=False)
+    iter_model, iter_params = arcs.create_resnet_iterative(models_path, 'iterative', mode=mode, return_name=False)
     full_ic_model, full_ic_params = arcs.create_resnet_iterative(models_path, 'full_ic', return_name=False)
     full_model, full_params = arcs.create_resnet_iterative(models_path, 'full', return_name=False)
 

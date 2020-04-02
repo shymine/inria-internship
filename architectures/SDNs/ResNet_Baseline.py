@@ -4,7 +4,6 @@ import torch.nn as nn
 import aux_funcs as af
 import model_funcs as mf
 import architectures.SDNs.ResNet_SDN as resNet
-from torch.optim import SGD, Adam
 
 class ResNet_Baseline(nn.Module):
     def __init__(self, params):
@@ -38,6 +37,8 @@ class ResNet_Baseline(nn.Module):
 
         if 'mode' in params:
             self.mode = params['mode']
+        else:
+            self.mode = 0
 
         if self.init_type != 'full' and len(self.ics) != self.total_size:
             raise ValueError("final size of network does not match the length of ics array: {}; {}".format(self.total_size, self.ics))
@@ -67,11 +68,11 @@ class ResNet_Baseline(nn.Module):
         self.end_layers = nn.Sequential(*end_layers)
 
         train_funcs = {
-            0: mf.iter_training_0,
-            1: mf.iter_training_1,
-            2: mf.iter_training_2,
-            3: mf.iter_training_3,
-            4: mf.iter_training_4
+            '0': mf.iter_training_0,
+            '1': mf.iter_training_1,
+            '2': mf.iter_training_2,
+            '3': mf.iter_training_3,
+            '4': mf.iter_training_4
         }
 
         if self.init_type == "full":
@@ -90,6 +91,7 @@ class ResNet_Baseline(nn.Module):
             self.num_output = sum(self.ics) + 1
         elif self.init_type == "iterative":
             self.train_func = train_funcs[self.mode]
+            print("mode function: {}".format(self.train_func))
             self.test_func = mf.sdn_test
             self.grow()
         else:
@@ -174,26 +176,3 @@ class ResNet_Baseline(nn.Module):
         self.layers.extend(layers)
         self.num_output += 1
         return filter(lambda p: p.requires_grad, [p for l in layers for p in l.parameters(True)])
-
-    # Not needed anymore as grow itself work well
-    # def grow_copy(self, add_ic=True):
-    #     model = ResNet_Baseline({
-    #         'augment_training':self.augment_training,
-    #         'init_weights': False,
-    #         'block_type': 'basic'#,
-    #         # 'size': self.num_output,
-    #         # 'init_type': self.init_type
-    #     })
-    #     for i in range(self.num_output):
-    #         model.grow(add_ic=True if hasattr(self.layers[3*i+2], 'output') else False)
-    #     with torch.no_grad():
-    #         for id, layer in enumerate(self.init_conv):
-    #             if hasattr(layer, 'weight'):
-    #                 model.init_conv[id].weight.copy_(layer.weigh)
-    #         for id, unit in enumerate(self.layers):
-    #             for id2, layer in enumerate(unit):
-    #                 if hasattr(layer, 'weight'):
-    #                     model.layers[id][id2].weight.copy_(layer.weight)
-    #     self.init_conv = model.init_conv
-    #     self.layers = model.layers
-    #     return filter(lambda p: p.requires_grad, model.parameters())
