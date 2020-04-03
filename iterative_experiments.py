@@ -62,9 +62,9 @@ def train_model(models_path, device, mode):
     return (iter_model, iter_params), (full_ic_model, full_ic_params), (full_model, full_params)
 
 def multi_experiments(models_path, device):
-    train0_model, train0_params = arcs.create_resnet_iterative(models_path, 'iterative', mode=0, return_name=False)
-    train1_model, train1_params = arcs.create_resnet_iterative(models_path, 'iterative', mode=1, return_name=False)
-    train2_model, train2_params = arcs.create_resnet_iterative(models_path, 'iterative', mode=2, return_name=False)
+    train0_model, train0_params = arcs.create_resnet_iterative(models_path, 'iterative', mode='0', return_name=False)
+    train1_model, train1_params = arcs.create_resnet_iterative(models_path, 'iterative', mode='1', return_name=False)
+    train2_model, train2_params = arcs.create_resnet_iterative(models_path, 'iterative', mode='2', return_name=False)
     full_ic_model, full_ic_params = arcs.create_resnet_iterative(models_path, 'full_ic', return_name=False)
     full_model, full_params = arcs.create_resnet_iterative(models_path, 'full', return_name=False)
 
