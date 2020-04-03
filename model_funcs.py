@@ -489,15 +489,19 @@ def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
     epoch_growth = [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
     print("epoch growth: {}".format(epoch_growth))
     freeze_epochs = (np.array([0, 25, 50])+epochs).tolist()
+    print("freeze epochs: {}".format(freeze_epochs))
     max_coeffs = calc_coeff(model)
 
     model.to(device)
     model.to_train()
 
-    for epoch in range(int(epoch_growth[-1])+epochs):
+    max_epoch = int(epoch_growth[-1])+epochs
+    print("max_epoch: {}".format(max_epoch))
+
+    for epoch in range(max_epoch):
         scheduler.step()
         cur_lr = af.get_lr(optimizer)
-        print('\nEpoch: {}/{}'.format(epoch, epochs))
+        print('\nEpoch: {}/{}'.format(epoch, max_epoch))
         print('cur_lr: {}'.format(cur_lr))
         max_coeffs = calc_coeff(model)
         cur_coeffs = 0.01 + epoch * (np.array(max_coeffs) / epochs)
@@ -550,13 +554,44 @@ def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
                     break
             print("index_to_freeze: {}".format(index_to_freeze))
             for bloc in model.layers[:index_to_freeze]:
-                bloc.parameters(True).require_grad = False
+                for param in bloc.parameters(True):
+                    param.require_grad = False
 
 
     return metrics
 
 def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
-    return {}
+    print("iter training 2")
+    augment = model.augment_training
+    metrics = {
+        'epoch_times': [],
+        'test_top1_acc': [],
+        'test_top3_acc': [],
+        'train_top1_acc': [],
+        'train_top3_acc': [],
+        'lrs': []
+    }
+    epoch_growth = [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
+    print("epoch growth: {}".format(epoch_growth))
+    def calc_inter_growth(array):
+        res = []
+        last = None
+        for i in array:
+            if last:
+                res.append(int((last+i)/2))
+            last = i
+        return res
+    unfreeze_epochs = calc_inter_growth(epoch_growth)
+    print("unfreeze_epochs: {}".format(unfreeze_epochs))
+    max_coeffs = calc_coeff(model)
+
+    model.to(device)
+    model.to_train()
+
+    for epoch in range(epochs):
+        scheduler.step()
+
+    return metrics
 
 def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
     return {}
