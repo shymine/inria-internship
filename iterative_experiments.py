@@ -86,7 +86,7 @@ def multi_experiments(models_path, device):
 
     train0_params['name'] = train0_name
     train1_params['name'] = train1_name
-    train1_params['name'] = train2_name
+    train2_params['name'] = train2_name
     full_ic_params['name'] = full_ic_name
     full_params['name'] = full_name
 
@@ -139,7 +139,8 @@ def main(mode):
     def print_acc(arr):
         str = "accuracies:\n"
         for i in arr:
-            str + "{}: {}, ".format(i[1]['name'], i[1]['test_top1_acc'][-1])
+            str += "{}: {}, ".format(i[1]['name'], i[1]['test_top1_acc'][-1])
+        return str
 
     random_seed = af.get_random_seed()
     models_path = 'networks/{}'.format(random_seed)
