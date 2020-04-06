@@ -18,6 +18,7 @@ from collections import Counter
 
 import aux_funcs as af
 import data
+import snip
 
 
 def sdn_training_step(optimizer, model, coeffs, batch, device):
@@ -658,7 +659,25 @@ def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
 
     return metrics
 
+# training vanilla with pruning
 def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
+    print("iter training 2")
+    augment = model.augment_training
+    metrics = {
+        'epoch_times': [],
+        'test_top1_acc': [],
+        'test_top3_acc': [],
+        'train_top1_acc': [],
+        'train_top3_acc': [],
+        'lrs': []
+    }
+    loader = get_loader(data, augment)
+    mask = snip.snip(model, 0.1, loader, sdn_loss, device)
+    snip.apply_prune_mask(model, mask)
+    print("pruning done")
+
+    # TODO
+
     return {}
 
 def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
