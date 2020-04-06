@@ -138,7 +138,9 @@ def _link_metrics(params, metrics):
 def main(mode):
     def print_acc(arr):
         str = "accuracies:\n"
+        print("arr: {}".format(arr))
         for i in arr:
+            print("i: {}".format(i))
             print("test print: {}".format(i[1]))
             str + "{}: {}, ".format(i[1]['name'], i[1]['test_top1_acc'][-1])
 
