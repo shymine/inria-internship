@@ -37,12 +37,16 @@ class ResNet_Baseline(nn.Module):
         self.ics = params['ics'] if 'ics' in params else []
         self.num_ics = sum(self.ics)
 
+        if 'mode' in params:
+            self.mode = params['mode']
+        else:
+            self.mode = 0
+
         if self.init_type != 'full' and len(self.ics) != self.total_size:
             raise ValueError("final size of network does not match the length of ics array: {}; {}".format(self.total_size, self.ics))
 
         self.num_class = 10
 
-        self.test_func = None
         self.num_output = 0
 
         if self.block_type == 'basic':
@@ -65,22 +69,32 @@ class ResNet_Baseline(nn.Module):
         self.layers = nn.ModuleList()
         self.end_layers = nn.Sequential(*end_layers)
 
+        train_funcs = {
+            '0': mf.iter_training_0,
+            '1': mf.iter_training_1,
+            '2': mf.iter_training_2,
+            '3': mf.iter_training_3,
+            '4': mf.iter_training_4
+        }
+
         if self.init_type == "full":
             self.train_func = mf.cnn_train
+            self.test_func = mf.cnn_test
             layers = [self.block(self.in_channels,
                         16, (False, self.num_class, 32, 1)) for _ in range(self.total_size)]
-            #self._init_weights(layers)
             self.layers.extend(layers)
             self.num_output = 1
         elif self.init_type == "full_ic":
             self.train_func = mf.sdn_train
+            self.test_func = mf.sdn_test
             layers = [self.block(self.in_channels,
                         16, (self.ics[i], self.num_class, 32, 1)) for i in range(self.total_size)]
-            #self.init_weights(layers)
             self.layers.extend(layers)
             self.num_output = sum(self.ics) + 1
         elif self.init_type == "iterative":
-            self.train_func = mf.iter_training
+            self.train_func = train_funcs[self.mode]
+            print("mode function: {}".format(self.train_func))
+            self.test_func = mf.sdn_test
             self.grow()
         else:
             raise KeyError("the init_type should be either 'full', 'full_ic' or 'iterative' and it is: {}".format(self.init_type))
@@ -134,16 +148,16 @@ class ResNet_Baseline(nn.Module):
         tmp = 0
         for ind, ic in enumerate(self.ics):
             tmp += ic
-            print("loop ({}), tmp:{}, ic:{}".format(ind, tmp, ic))
+            # print("loop ({}), tmp:{}, ic:{}".format(ind, tmp, ic))
             if tmp >= self.num_output:
                 ics_index = ind
                 break
-        print("tmp: {}, num_ics: {}".format(tmp, self.num_ics))
+        # print("tmp: {}, num_ics: {}".format(tmp, self.num_ics))
         if tmp == self.num_ics: # no more ICs are to be grown
             print("Eval mode")
             self.to_eval()
-        print("ics_index: {}".format(ics_index))
-        print("iter on: {}".format(self.ics[ics_index:]))
+        # print("ics_index: {}".format(ics_index))
+        # print("iter on: {}".format(self.ics[ics_index:]))
         pos = 1
         if ics_index == 0:
             pos = 0
@@ -152,14 +166,14 @@ class ResNet_Baseline(nn.Module):
             if ic:
                 add_ic = True
                 break
-        print("nb_grow: {}".format(nb_grow))
+        # print("nb_grow: {}".format(nb_grow))
         layers = [
             self.block(self.in_channels,
                        16, (add_ic if i == nb_grow-1 else False,
                            self.num_class, 32, 1))
             for i in range(nb_grow)
         ]
-        print("grown layers: {}".format(layers))
+        # print("grown layers: {}".format(layers))
         self._init_weights(layers)
         self.layers.extend(layers)
         self.num_output += 1

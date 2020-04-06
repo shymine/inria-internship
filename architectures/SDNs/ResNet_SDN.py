@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+from itertools import chain
 
 import sys
 
@@ -71,6 +72,12 @@ class BasicBlockWOutput(nn.Module):
         fwd = self.layers[0](x) # conv layers
         fwd = fwd + self.layers[1](x) # shortcut
         return self.layers[2](fwd), 0, None # activation
+
+    def get_parameters(self):
+        if hasattr(self, 'output'):
+            return chain(self.layers.parameters(True), self.output.parameter)
+        else:
+            return self.layers.parameters(True)
 
 class ResNet_SDN(nn.Module): #56 layers
     def __init__(self, params):

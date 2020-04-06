@@ -70,6 +70,7 @@ def get_loader(data, augment):
 
 def sdn_train(model, data, epochs, optimizer, scheduler, device='cpu'):
     augment = model.augment_training
+    print("sdn training")
     metrics = {'epoch_times':[], 'test_top1_acc':[], 'test_top3_acc':[], 'train_top1_acc':[], 'train_top3_acc':[], 'lrs':[]}
     max_coeffs = np.array([0.15, 0.3, 0.45, 0.6, 0.75, 0.9]) # max tau_i --- C_i values
 
@@ -297,7 +298,7 @@ def cnn_training_step(model, optimizer, data, labels, device='cpu', islist=False
 
 def cnn_train(model, data, epochs, optimizer, scheduler, device='cpu'):
     metrics = {'epoch_times':[], 'test_top1_acc':[], 'test_top3_acc':[], 'train_top1_acc':[], 'train_top3_acc':[], 'lrs':[]}
-
+    print("cnn training")
     for epoch in range(1, epochs+1):
         scheduler.step()
 
@@ -370,8 +371,10 @@ def cnn_test(model, loader, device='cpu'):
             b_x = batch[0].to(device)
             b_y = batch[1].to(device)
             output = model(b_x)
+
             if isinstance(output, list):
                 output = output[0]
+
             prec1, prec3 = data.accuracy(output, b_y, topk=(1, 3))
             top1.update(prec1[0], b_x.size(0))
             top3.update(prec3[0], b_x.size(0))
@@ -414,7 +417,9 @@ def cnn_get_confidence(model, loader, device='cpu'):
    
     return correct, wrong, instance_confidence
 
-def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
+# default training
+def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
+    print("iter training 0")
     augment = model.augment_training
     metrics = {
         'epoch_times': [],
@@ -424,9 +429,10 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
         'train_top3_acc': [],
         'lrs': []
     }
-    def calc_coeff(model):
-        return [0.01+(1/model.num_output)*(i+1) for i in range(model.num_output-1)]
-    # max tau: % of the network for the IC -> if 3 outputs: 0.33, 0.66, 1
+    epoch_growth = [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
+    print("array params: num_ics {}, epochs {}".format(model.num_ics, epochs))
+    print("epochs growth: {}".format(epoch_growth))
+
     max_coeffs = calc_coeff(model)
     print('max_coeffs: {}'.format(max_coeffs))
     print('layers: {}'.format(model.layers))
@@ -446,7 +452,7 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
         model.train()
         loader = get_loader(data, augment)
         for i, batch in enumerate(loader):
-            total_loss = sdn_training_step(optimizer, model, cur_coeffs, batch, device) #iter_training_step()
+            total_loss = sdn_training_step(optimizer, model, cur_coeffs, batch, device)
             if i%100 == 0:
                 print("Loss: {}".format(total_loss))
 
@@ -469,12 +475,97 @@ def iter_training(model, data, epochs, optimizer, scheduler, device='cpu'):
         metrics['epoch_times'].append(epoch_time)
         metrics['lrs'].append(cur_lr)
 
-        if epoch in [25,50,75]: #,100,125,150]:
+        if epoch in epoch_growth:
             grown_layers = model.grow()
             model.to(device)
-            optimizer.add_param_group({'params':grown_layers}) #= af.get_full_optimizer(model, optim_param2, scheduler_params)
+            optimizer.add_param_group({'params':grown_layers})
             print("model grow")
             print("layers: {}".format(model.layers))
+    return metrics
+
+# training with freezing the previous layers
+def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
+    print("iter training 1")
+    augment = model.augment_training
+    metrics = {
+        'epoch_times': [],
+        'test_top1_acc': [],
+        'test_top3_acc': [],
+        'train_top1_acc': [],
+        'train_top3_acc': [],
+        'lrs': []
+    }
+    epoch_growth = [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
+    print("epoch growth: {}".format(epoch_growth))
+    freeze_epochs = (np.array([0, 25, 50])+epochs).tolist()
+    print("freeze epochs: {}".format(freeze_epochs))
+    max_coeffs = calc_coeff(model)
+
+    model.to(device)
+    model.to_train()
+
+    max_epoch = int(epoch_growth[-1])+epochs
+    print("max_epoch: {}".format(max_epoch))
+
+    for epoch in range(max_epoch):
+        scheduler.step()
+        cur_lr = af.get_lr(optimizer)
+        print('\nEpoch: {}/{}'.format(epoch, max_epoch))
+        print('cur_lr: {}'.format(cur_lr))
+        max_coeffs = calc_coeff(model)
+        cur_coeffs = 0.01 + epoch * (np.array(max_coeffs) / epochs)
+        cur_coeffs = np.minimum(max_coeffs, cur_coeffs)
+        print("current coeffs: {}".format(cur_coeffs))
+
+        start_time = time.time()
+        model.train()
+        loader = get_loader(data, augment)
+        for i, batch in enumerate(loader):
+            total_loss = sdn_training_step(optimizer, model, cur_coeffs, batch, device)
+            if i%100 == 0:
+                print("Loss: {}".format(total_loss))
+
+        top1_test, top3_test = sdn_test(model, data.test_loader, device)
+        end_time = time.time()
+
+        print('Top1 Test accuracies: {}'.format(top1_test))
+        print('Top3 Test accuracies: {}'.format(top3_test))
+        top1_train, top3_train = sdn_test(model, get_loader(data, augment), device)
+        print('Top1 Train accuracies: {}'.format(top1_train))
+        print('Top3 Train accuracies: {}'.format(top3_train))
+
+        epoch_time = int(end_time - start_time)
+        print('Epoch took {} seconds.'.format(epoch_time))
+
+        metrics['test_top1_acc'].append(top1_test)
+        metrics['test_top3_acc'].append(top3_test)
+        metrics['train_top1_acc'].append(top1_train)
+        metrics['train_top3_acc'].append(top3_train)
+        metrics['epoch_times'].append(epoch_time)
+        metrics['lrs'].append(cur_lr)
+
+        if epoch in epoch_growth:
+            grown_layers = model.grow()
+            model.to(device)
+            optimizer.add_param_group({'params': grown_layers})
+            print("model grow")
+            print("layers: {}".format(model.layers))
+
+        if epoch in freeze_epochs:
+            index = freeze_epochs.index(epoch)
+            index_to_freeze = 0 # the index of the layer until which we freeze the network
+            print("index of freeze_epoch: {}".format(index))
+            nb = 0
+            for ic in model.ics:
+                nb += ic
+                index_to_freeze += 1
+                if nb > index:
+                    break
+            print("index_to_freeze: {}".format(index_to_freeze))
+            for bloc in model.layers[:index_to_freeze]:
+                for param in bloc.parameters(True):
+                    param.require_grad = False
+
     return metrics
 
 def sdn_loss(output, label, coeffs=None):
@@ -486,3 +577,93 @@ def sdn_loss(output, label, coeffs=None):
     total_loss += af.get_loss_criterion()(output[-1], label)
     return total_loss
 
+# training with freezing previous layers and defrezing
+def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
+    print("iter training 2")
+    augment = model.augment_training
+    metrics = {
+        'epoch_times': [],
+        'test_top1_acc': [],
+        'test_top3_acc': [],
+        'train_top1_acc': [],
+        'train_top3_acc': [],
+        'lrs': []
+    }
+    epoch_growth = [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
+    print("epoch growth: {}".format(epoch_growth))
+    def calc_inter_growth(array, last_epoch):
+        res = []
+        last = None
+        arr = array+[last_epoch]
+        for i in arr:
+            if last:
+                res.append(int((last+i)/2))
+            last = i
+        return res
+    unfreeze_epochs = calc_inter_growth(epoch_growth, epochs)
+    print("unfreeze_epochs: {}".format(unfreeze_epochs))
+    max_coeffs = calc_coeff(model)
+
+    model.to(device)
+    model.to_train()
+
+    for epoch in range(epochs):
+        scheduler.step()
+        cur_lr = af.get_lr(optimizer)
+        print("\nEpoch: {}/{}".format(epoch, epochs))
+        print("cur_lr: {}".format(cur_lr))
+        max_coeffs = calc_coeff(model)
+        cur_coeffs = 0.01 + epoch * (np.array(max_coeffs) / epochs)
+        cur_coeffs = np.minimum(max_coeffs, cur_coeffs)
+        print("current coeffs: {}".format(cur_coeffs))
+
+        start_time = time.time()
+        model.train()
+        loader = get_loader(data, augment)
+        for i, batch in enumerate(loader):
+            total_loss = sdn_training_step(optimizer, model, cur_coeffs, batch, device)
+            if i%100 == 0:
+                print("Loss: {}".format(total_loss))
+
+        top1_test, top3_test = sdn_test(model, data.test_loader, device)
+        end_time = time.time()
+
+        print('Top1 Test accuracies: {}'.format(top1_test))
+        print('Top3 Test accuracies: {}'.format(top3_test))
+        top1_train, top3_train = sdn_test(model, get_loader(data, augment), device)
+        print('Top1 Train accuracies: {}'.format(top1_train))
+        print('Top3 Train accuracies: {}'.format(top3_train))
+
+        epoch_time = int(end_time - start_time)
+        print('Epoch took {} seconds.'.format(epoch_time))
+
+        metrics['test_top1_acc'].append(top1_test)
+        metrics['test_top3_acc'].append(top3_test)
+        metrics['train_top1_acc'].append(top1_train)
+        metrics['train_top3_acc'].append(top3_train)
+        metrics['epoch_times'].append(epoch_time)
+        metrics['lrs'].append(cur_lr)
+
+        if epoch in epoch_growth:
+            for params in model.parameters(True):
+                params.require_grad = False
+            grown_layers = model.grow()
+            model.to(device)
+            optimizer.add_param_group({'params': grown_layers})
+            print("model grow")
+
+        if epoch in unfreeze_epochs:
+            for params in model.parameters(True):
+                params.require_grad = True
+
+    return metrics
+
+def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
+    return {}
+
+def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
+    return {}
+
+def calc_coeff(model):
+    return [0.01 + (1 / model.num_output) * (i + 1) for i in range(model.num_output - 1)]
+# max tau: % of the network for the IC -> if 3 outputs: 0.33, 0.66, 1
