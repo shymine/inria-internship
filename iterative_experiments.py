@@ -86,7 +86,7 @@ def multi_experiments(models_path, device):
 
     train0_params['name'] = train0_name
     train1_params['name'] = train1_name
-    train1_params['name'] = train2_name
+    train2_params['name'] = train2_name
     full_ic_params['name'] = full_ic_name
     full_params['name'] = full_name
 
@@ -106,25 +106,25 @@ def multi_experiments(models_path, device):
     full_optimizer, full_scheduler = af.get_full_optimizer(full_model, opti_param, lr_schedule_params)
 
     train0_metrics = train0_model.train_func(train0_model, dataset, num_epochs, train0_optimizer, train0_scheduler, device)
-    # train1_metrics = train1_model.train_func(train1_model, dataset, num_epochs, train1_optimizer, train1_scheduler, device)
-    # train2_metrics = train2_model.train_func(train2_model, dataset, num_epochs, train2_optimizer, train2_scheduler, device)
-    # full_ic_metrics = full_ic_model.train_func(full_ic_model, dataset, num_epochs, full_ic_optimizer, full_ic_scheduler, device)
-    # full_metrics = full_model.train_func(full_model, dataset, num_epochs, full_optimizer, full_scheduler, device, True)
+    train1_metrics = train1_model.train_func(train1_model, dataset, num_epochs, train1_optimizer, train1_scheduler, device)
+    train2_metrics = train2_model.train_func(train2_model, dataset, num_epochs, train2_optimizer, train2_scheduler, device)
+    full_ic_metrics = full_ic_model.train_func(full_ic_model, dataset, num_epochs, full_ic_optimizer, full_ic_scheduler, device)
+    full_metrics = full_model.train_func(full_model, dataset, num_epochs, full_optimizer, full_scheduler, device, True)
 
     _link_metrics(train0_params, train0_metrics)
-    # _link_metrics(train1_params, train1_metrics)
-    # _link_metrics(train2_params, train2_metrics)
-    # _link_metrics(full_ic_params, full_ic_metrics)
-    # _link_metrics(full_params, full_metrics)
+    _link_metrics(train1_params, train1_metrics)
+    _link_metrics(train2_params, train2_metrics)
+    _link_metrics(full_ic_params, full_ic_metrics)
+    _link_metrics(full_params, full_metrics)
 
     arcs.save_model(train0_model, train0_params, models_path, train0_name, epoch=-1)
-    # arcs.save_model(train1_model, train1_params, models_path, train1_name, epoch=-1)
-    # arcs.save_model(train2_model, train2_params, models_path, train2_name, epoch=-1)
-    #
-    # arcs.save_model(full_ic_model, full_ic_params, models_path, full_ic_name, epoch=-1)
-    # arcs.save_model(full_model, full_params, models_path, full_name, epoch=-1)
+    arcs.save_model(train1_model, train1_params, models_path, train1_name, epoch=-1)
+    arcs.save_model(train2_model, train2_params, models_path, train2_name, epoch=-1)
 
-    return (train0_model, train0_params)#, (train1_model, train1_params), (train2_model, train2_params), (full_ic_model, full_ic_params), (full_model, full_params)
+    arcs.save_model(full_ic_model, full_ic_params, models_path, full_ic_name, epoch=-1)
+    arcs.save_model(full_model, full_params, models_path, full_name, epoch=-1)
+
+    return (train0_model, train0_params), (train1_model, train1_params), (train2_model, train2_params), (full_ic_model, full_ic_params), (full_model, full_params)
 
 
 def _link_metrics(params, metrics):
@@ -138,11 +138,9 @@ def _link_metrics(params, metrics):
 def main(mode):
     def print_acc(arr):
         str = "accuracies:\n"
-        print("arr: {}".format(arr))
         for i in arr:
-            print("i: {}".format(i))
-            print("test print: {}".format(i[1]))
-            str + "{}: {}, ".format(i[1]['name'], i[1]['test_top1_acc'][-1])
+            str += "{}: {}, ".format(i[1]['name'], i[1]['test_top1_acc'][-1])
+        return str
 
     random_seed = af.get_random_seed()
     models_path = 'networks/{}'.format(random_seed)
