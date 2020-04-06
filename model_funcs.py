@@ -575,15 +575,16 @@ def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
     }
     epoch_growth = [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
     print("epoch growth: {}".format(epoch_growth))
-    def calc_inter_growth(array):
+    def calc_inter_growth(array, last_epoch):
         res = []
         last = None
-        for i in array:
+        arr = array+[last_epoch]
+        for i in arr:
             if last:
                 res.append(int((last+i)/2))
             last = i
         return res
-    unfreeze_epochs = calc_inter_growth(epoch_growth)
+    unfreeze_epochs = calc_inter_growth(epoch_growth, epochs)
     print("unfreeze_epochs: {}".format(unfreeze_epochs))
     max_coeffs = calc_coeff(model)
 

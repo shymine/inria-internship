@@ -139,7 +139,7 @@ def main(mode):
     def print_acc(arr):
         str = "accuracies:\n"
         for i in arr:
-            str + "{}: {}, ".format(i[1]['name'], i[1]['test_trop1_acc'][-1])
+            str + "{}: {}, ".format(i[1]['name'], i[1]['test_top1_acc'][-1])
 
     random_seed = af.get_random_seed()
     models_path = 'networks/{}'.format(random_seed)
