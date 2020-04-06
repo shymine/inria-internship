@@ -53,6 +53,48 @@ def snip(model, keep_ratio, train_dataloader, loss, device="cpu"):
 
     return (keep_masks)
 
+def snip_skiplayers(model, layers, keep_ratio, loader, loss, device='cpu'):
+    inputs, targets = next(iter(loader))
+    inputs, targets = inputs.to(device), targets.to(device)
+    _model = copy.deepcopy(model)
+    _layers = copy.deepcopy(layers)
+
+    for layer in _model.modules():
+        conv2 = isinstance(layer, nn.Conv2d)
+        lin = isinstance(layer, nn.Linear)
+        if conv2 or lin:
+            layer.weight_mask = nn.Parameter(torch.ones_like(layer.weight))
+            nn.init.xavier_normal_(layer.weight)
+            layer.weight.requires_grad = False
+            if conv2:
+                layer.forward = types.MethodType(snip_forward_conv2d, layer)
+            if lin:
+                layer.forward = types.MethodType(snip_forward_linear, layer)
+
+    _model.to(device)
+    _model.zero_grad()
+    outputs = _model(inputs)
+    total_loss = loss(outputs, targets)
+    total_loss.backward()
+
+    grads_abs = []
+    for layer in _model.modules():
+        if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
+            grads_abs.append(torch.abs(layer.weight_mask.grad))
+    all_scores = torch.cat([torch.flatten(x) for x in grads_abs])
+    norm_factor = torch.sum(all_scores)
+    all_scores.div_(norm_factor)
+
+    num_params_to_keep = int(len(all_scores) * keep_ratio)
+    threshold, _ = torch.topk(all_scores, num_params_to_keep, sorted=True)
+    acceptable_score = threshold[-1]
+
+    keep_masks = []
+    for g in grads_abs:
+        keep_masks.append(((g / norm_factor) >= acceptable_score).float())
+
+    return (keep_masks)
+
 def apply_prune_mask(model, masks):
     prunable_layers = filter(
         lambda layer: isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear),

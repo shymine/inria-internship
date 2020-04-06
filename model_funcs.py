@@ -676,9 +676,62 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
     snip.apply_prune_mask(model, mask)
     print("pruning done")
 
-    # TODO
+    epoch_growth = [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
+    print("array params: num_ics {}, epochs {}".format(model.num_ics, epochs))
+    print("epochs growth: {}".format(epoch_growth))
 
-    return {}
+    max_coeffs = calc_coeff(model)
+    print('max_coeffs: {}'.format(max_coeffs))
+    print('layers: {}'.format(model.layers))
+    model.to(device)
+    model.to_train()
+    for epoch in range(1, epochs + 1):
+        scheduler.step()
+        cur_lr = af.get_lr(optimizer)
+        print('\nEpoch: {}/{}'.format(epoch, epochs))
+        print('cur_lr: {}'.format(cur_lr))
+        max_coeffs = calc_coeff(model)
+        cur_coeffs = 0.01 + epoch * (np.array(max_coeffs) / epochs)
+        cur_coeffs = np.minimum(max_coeffs, cur_coeffs)
+        print("current coeffs: {}".format(cur_coeffs))
+
+        start_time = time.time()
+        model.train()
+        loader = get_loader(data, augment)
+        for i, batch in enumerate(loader):
+            total_loss = sdn_training_step(optimizer, model, cur_coeffs, batch, device)
+            if i % 100 == 0:
+                print("Loss: {}".format(total_loss))
+
+        top1_test, top3_test = sdn_test(model, data.test_loader, device)
+        end_time = time.time()
+
+        print('Top1 Test accuracies: {}'.format(top1_test))
+        print('Top3 Test accuracies: {}'.format(top3_test))
+        top1_train, top3_train = sdn_test(model, get_loader(data, augment), device)
+        print('Top1 Train accuracies: {}'.format(top1_train))
+        print('Top3 Train accuracies: {}'.format(top3_train))
+
+        epoch_time = int(end_time - start_time)
+        print('Epoch took {} seconds.'.format(epoch_time))
+
+        metrics['test_top1_acc'].append(top1_test)
+        metrics['test_top3_acc'].append(top3_test)
+        metrics['train_top1_acc'].append(top1_train)
+        metrics['train_top3_acc'].append(top3_train)
+        metrics['epoch_times'].append(epoch_time)
+        metrics['lrs'].append(cur_lr)
+
+        if epoch in epoch_growth:
+            grown_layers = model.grow()
+
+            # TODO: prune new layers and freeze the older ones.
+            model.to(device)
+            optimizer.add_param_group({'params': grown_layers})
+            print("model grow")
+            print("layers: {}".format(model.layers))
+
+    return metrics
 
 def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
     return {}
