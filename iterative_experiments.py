@@ -124,7 +124,7 @@ def multi_experiments(models_path, device):
     arcs.save_model(full_ic_model, full_ic_params, models_path, full_ic_name, epoch=-1)
     arcs.save_model(full_model, full_params, models_path, full_name, epoch=-1)
 
-    return (train0_model, train0_params), (train1_model, train1_params), (train2_model, train2_params), (full_ic_model, full_ic_params), (full_model, full_params)
+    return [(train0_model, train0_params), (train1_model, train1_params), (train2_model, train2_params), (full_ic_model, full_ic_params), (full_model, full_params)]
 
 
 def _link_metrics(params, metrics):
@@ -140,7 +140,7 @@ def main(mode):
         str = "accuracies:\n"
         for i in arr:
             str += "{}: {}, ".format(i[1]['name'], i[1]['test_top1_acc'][-1])
-        return str
+        print(str)
 
     random_seed = af.get_random_seed()
     models_path = 'networks/{}'.format(random_seed)
