@@ -140,7 +140,7 @@ def main(mode):
         str = "accuracies:\n"
         for i in arr:
             str += "{}: {}, ".format(i[1]['name'], i[1]['test_top1_acc'][-1])
-        return str
+        print(str)
 
     random_seed = af.get_random_seed()
     models_path = 'networks/{}'.format(random_seed)
@@ -148,7 +148,6 @@ def main(mode):
     #iter, full_ic, full = train_model(models_path, device, mode)
     #print("accuracies:\niter: {}, full_ic: {}, full: {}".format(iter[1]['test_top1_acc'][-1], full_ic[1]['test_top1_acc'][-1], full[1]['test_top1_acc'][-1]))
     arr = multi_experiments(models_path, device)
-    print("arr")
     print_acc(arr)
 
 
