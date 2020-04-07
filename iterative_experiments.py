@@ -124,7 +124,7 @@ def multi_experiments(models_path, device):
     arcs.save_model(full_ic_model, full_ic_params, models_path, full_ic_name, epoch=-1)
     arcs.save_model(full_model, full_params, models_path, full_name, epoch=-1)
 
-    return (train0_model, train0_params), (train1_model, train1_params), (train2_model, train2_params), (full_ic_model, full_ic_params), (full_model, full_params)
+    return [(train0_model, train0_params), (train1_model, train1_params), (train2_model, train2_params), (full_ic_model, full_ic_params), (full_model, full_params)]
 
 
 def _link_metrics(params, metrics):
@@ -148,6 +148,7 @@ def main(mode):
     #iter, full_ic, full = train_model(models_path, device, mode)
     #print("accuracies:\niter: {}, full_ic: {}, full: {}".format(iter[1]['test_top1_acc'][-1], full_ic[1]['test_top1_acc'][-1], full[1]['test_top1_acc'][-1]))
     arr = multi_experiments(models_path, device)
+    print("arr")
     print_acc(arr)
 
 
