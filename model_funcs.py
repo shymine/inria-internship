@@ -671,10 +671,15 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
         'train_top3_acc': [],
         'lrs': []
     }
+
+    count_pruned = 0
+
+    def prune(model, keep_ratio, loader, loss, count_pruned, device):
+        masks, cur_pruned = snip.snip_skip_layers(model, keep_ratio, loader, loss, device)
+        snip.apply_prune_mask_skip_layers(model, masks, count_pruned)
+        return cur_pruned
+
     loader = get_loader(data, augment)
-    mask = snip.snip(model, 0.1, loader, sdn_loss, device)
-    snip.apply_prune_mask(model, mask)
-    print("pruning done")
 
     epoch_growth = [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
     print("array params: num_ics {}, epochs {}".format(model.num_ics, epochs))
@@ -685,6 +690,9 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
     print('layers: {}'.format(model.layers))
     model.to(device)
     model.to_train()
+
+    count_pruned = prune(model, 0.1, loader, sdn_loss, count_pruned, device)
+
     for epoch in range(1, epochs + 1):
         scheduler.step()
         cur_lr = af.get_lr(optimizer)
@@ -730,6 +738,8 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
             optimizer.add_param_group({'params': grown_layers})
             print("model grow")
             print("layers: {}".format(model.layers))
+
+            count_pruned = prune(model, 0.1, loader, sdn_loss, count_pruned, device)
 
     return metrics
 

@@ -53,11 +53,26 @@ def snip(model, keep_ratio, train_dataloader, loss, device="cpu"):
 
     return (keep_masks)
 
-def snip_skiplayers(model, layers, keep_ratio, loader, loss, device='cpu'):
+def apply_prune_mask(model, masks):
+    prunable_layers = filter(
+        lambda layer: isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear),
+        model.modules()
+    )
+
+    for layer, mask in zip(prunable_layers, masks):
+        assert (layer.weight.shape == mask.shape)
+        def hook_factory(mask):
+            def hook(grads):
+                return grads*mask
+            return hook
+        layer.weight.data[mask == 0.] = 0.
+        layer.weight.register_hook(hook_factory(mask))
+
+def snip_skip_layers(model, keep_ratio, loader, loss, device='cpu'):
     inputs, targets = next(iter(loader))
     inputs, targets = inputs.to(device), targets.to(device)
     _model = copy.deepcopy(model)
-    _layers = copy.deepcopy(layers)
+    count_pruned = 0
 
     for layer in _model.modules():
         conv2 = isinstance(layer, nn.Conv2d)
@@ -66,6 +81,7 @@ def snip_skiplayers(model, layers, keep_ratio, loader, loss, device='cpu'):
             layer.weight_mask = nn.Parameter(torch.ones_like(layer.weight))
             nn.init.xavier_normal_(layer.weight)
             layer.weight.requires_grad = False
+            count_pruned += 1
             if conv2:
                 layer.forward = types.MethodType(snip_forward_conv2d, layer)
             if lin:
@@ -93,19 +109,25 @@ def snip_skiplayers(model, layers, keep_ratio, loader, loss, device='cpu'):
     for g in grads_abs:
         keep_masks.append(((g / norm_factor) >= acceptable_score).float())
 
-    return (keep_masks)
+    print("count_pruned in snip: {}".format(count_pruned))
+    return (keep_masks, count_pruned)
 
-def apply_prune_mask(model, masks):
+def apply_prune_mask_skip_layers(model, masks, count_pruned):
     prunable_layers = filter(
         lambda layer: isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear),
         model.modules()
     )
-
+    count = 0
     for layer, mask in zip(prunable_layers, masks):
         assert (layer.weight.shape == mask.shape)
+
         def hook_factory(mask):
             def hook(grads):
-                return grads*mask
+                return grads * mask
+
             return hook
-        layer.weight.data[mask == 0.] = 0.
-        layer.weight.register_hook(hook_factory(mask))
+        if count >= count_pruned:
+            print("pruned: {}".format(count))
+            layer.weight.data[mask == 0.] = 0.
+            layer.weight.register_hook(hook_factory(mask))
+        count += 1
