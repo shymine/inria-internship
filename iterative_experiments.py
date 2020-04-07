@@ -1,9 +1,8 @@
-import sys
 import getopt
+import sys
 
 import aux_funcs as af
 import network_architectures as arcs
-import model_funcs as mf
 
 """
 Tests to do:
@@ -13,6 +12,7 @@ Tests to do:
 - grow every 50, freeze the 25 first and learn the 25 others for beneath layers
 """
 
+
 def train_model(models_path, device, mode):
     iter_model, iter_params = arcs.create_resnet_iterative(models_path, 'iterative', mode=mode, return_name=False)
     full_ic_model, full_ic_params = arcs.create_resnet_iterative(models_path, 'full_ic', return_name=False)
@@ -20,12 +20,12 @@ def train_model(models_path, device, mode):
 
     print("Training...")
     dataset = af.get_dataset('cifar10', 128)
-    lr = iter_params['learning_rate']/10 #0.01
+    lr = iter_params['learning_rate'] / 10  # 0.01
     momentum = iter_params['momentum']
     weight_decay = iter_params['weight_decay']
     milestones = iter_params['milestones']
     gammas = iter_params['gammas']
-    num_epochs = iter_params['epochs'] #100
+    num_epochs = iter_params['epochs']  # 100
     iter_params['optimizer'] = 'SGD'
 
     iter_name = iter_params['base_model']
@@ -48,7 +48,8 @@ def train_model(models_path, device, mode):
     full_optimizer, full_scheduler = af.get_full_optimizer(full_model, opti_param, lr_schedule_params)
 
     iter_metrics = iter_model.train_func(iter_model, dataset, num_epochs, iter_optimizer, iter_scheduler, device)
-    full_ic_metrics = full_ic_model.train_func(full_ic_model, dataset, num_epochs, full_ic_optimizer, full_ic_scheduler, device)
+    full_ic_metrics = full_ic_model.train_func(full_ic_model, dataset, num_epochs, full_ic_optimizer, full_ic_scheduler,
+                                               device)
     full_metrics = full_model.train_func(full_model, dataset, num_epochs, full_optimizer, full_scheduler, device)
 
     _link_metrics(iter_params, iter_metrics)
@@ -60,6 +61,7 @@ def train_model(models_path, device, mode):
     arcs.save_model(full_model, full_params, models_path, full_name, epoch=-1)
 
     return (iter_model, iter_params), (full_ic_model, full_ic_params), (full_model, full_params)
+
 
 def multi_experiments(models_path, device):
     train0_model, train0_params = arcs.create_resnet_iterative(models_path, 'iterative', mode='0', return_name=False)
@@ -105,10 +107,14 @@ def multi_experiments(models_path, device):
     full_ic_optimizer, full_ic_scheduler = af.get_full_optimizer(full_ic_model, opti_param, lr_schedule_params)
     full_optimizer, full_scheduler = af.get_full_optimizer(full_model, opti_param, lr_schedule_params)
 
-    train0_metrics = train0_model.train_func(train0_model, dataset, num_epochs, train0_optimizer, train0_scheduler, device)
-    train1_metrics = train1_model.train_func(train1_model, dataset, num_epochs, train1_optimizer, train1_scheduler, device)
-    train2_metrics = train2_model.train_func(train2_model, dataset, num_epochs, train2_optimizer, train2_scheduler, device)
-    full_ic_metrics = full_ic_model.train_func(full_ic_model, dataset, num_epochs, full_ic_optimizer, full_ic_scheduler, device)
+    train0_metrics = train0_model.train_func(train0_model, dataset, num_epochs, train0_optimizer, train0_scheduler,
+                                             device)
+    train1_metrics = train1_model.train_func(train1_model, dataset, num_epochs, train1_optimizer, train1_scheduler,
+                                             device)
+    train2_metrics = train2_model.train_func(train2_model, dataset, num_epochs, train2_optimizer, train2_scheduler,
+                                             device)
+    full_ic_metrics = full_ic_model.train_func(full_ic_model, dataset, num_epochs, full_ic_optimizer, full_ic_scheduler,
+                                               device)
     full_metrics = full_model.train_func(full_model, dataset, num_epochs, full_optimizer, full_scheduler, device, True)
 
     _link_metrics(train0_params, train0_metrics)
@@ -124,7 +130,8 @@ def multi_experiments(models_path, device):
     arcs.save_model(full_ic_model, full_ic_params, models_path, full_ic_name, epoch=-1)
     arcs.save_model(full_model, full_params, models_path, full_name, epoch=-1)
 
-    return [(train0_model, train0_params), (train1_model, train1_params), (train2_model, train2_params), (full_ic_model, full_ic_params), (full_model, full_params)]
+    return [(train0_model, train0_params), (train1_model, train1_params), (train2_model, train2_params),
+            (full_ic_model, full_ic_params), (full_model, full_params)]
 
 
 def _link_metrics(params, metrics):
@@ -135,21 +142,15 @@ def _link_metrics(params, metrics):
     params['epoch_times'] = metrics['epoch_times']
     params['lrs'] = metrics['lrs']
 
-def main(mode):
-    def print_acc(arr):
-        str = "accuracies:\n"
-        for i in arr:
-            str += "{}: {}, ".format(i[1]['name'], i[1]['test_top1_acc'][-1])
-        print(str)
 
+def main(mode):
     random_seed = af.get_random_seed()
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
-    #iter, full_ic, full = train_model(models_path, device, mode)
-    #print("accuracies:\niter: {}, full_ic: {}, full: {}".format(iter[1]['test_top1_acc'][-1], full_ic[1]['test_top1_acc'][-1], full[1]['test_top1_acc'][-1]))
+    # iter, full_ic, full = train_model(models_path, device, mode)
+    # print("accuracies:\niter: {}, full_ic: {}, full: {}".format(iter[1]['test_top1_acc'][-1], full_ic[1]['test_top1_acc'][-1], full[1]['test_top1_acc'][-1]))
     arr = multi_experiments(models_path, device)
-    print_acc(arr)
-
+    af.print_acc(arr)
 
 
 if __name__ == '__main__':

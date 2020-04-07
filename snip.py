@@ -1,16 +1,19 @@
+import copy
+import types
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import copy
-import types
 
 def snip_forward_conv2d(self, x):
     return F.conv2d(x, self.weight * self.weight_mask, self.bias,
                     self.stride, self.padding, self.dilation, self.groups)
 
+
 def snip_forward_linear(self, x):
     return F.linear(x, self.weight * self.weight_mask, self.bias)
+
 
 def snip(model, keep_ratio, train_dataloader, loss, device="cpu"):
     inputs, targets = next(iter(train_dataloader))
@@ -53,6 +56,7 @@ def snip(model, keep_ratio, train_dataloader, loss, device="cpu"):
 
     return (keep_masks)
 
+
 def apply_prune_mask(model, masks):
     prunable_layers = filter(
         lambda layer: isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear),
@@ -61,12 +65,16 @@ def apply_prune_mask(model, masks):
 
     for layer, mask in zip(prunable_layers, masks):
         assert (layer.weight.shape == mask.shape)
+
         def hook_factory(mask):
             def hook(grads):
-                return grads*mask
+                return grads * mask
+
             return hook
+
         layer.weight.data[mask == 0.] = 0.
         layer.weight.register_hook(hook_factory(mask))
+
 
 def snip_skip_layers(model, keep_ratio, loader, loss, device='cpu'):
     inputs, targets = next(iter(loader))
@@ -112,6 +120,7 @@ def snip_skip_layers(model, keep_ratio, loader, loss, device='cpu'):
     print("count_pruned in snip: {}".format(count_pruned))
     return (keep_masks, count_pruned)
 
+
 def apply_prune_mask_skip_layers(model, masks, count_pruned):
     prunable_layers = filter(
         lambda layer: isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear),
@@ -126,6 +135,7 @@ def apply_prune_mask_skip_layers(model, masks, count_pruned):
                 return grads * mask
 
             return hook
+
         if count >= count_pruned:
             print("pruned: {}".format(count))
             layer.weight.data[mask == 0.] = 0.

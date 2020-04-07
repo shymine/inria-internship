@@ -1,6 +1,4 @@
-import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 import aux_funcs as af
 import model_funcs as mf
@@ -8,10 +6,13 @@ import model_funcs as mf
 
 class Block(nn.Module):
     '''Depthwise conv + Pointwise conv'''
+
     def __init__(self, in_channels, out_channels, stride=1):
         super(Block, self).__init__()
         conv_layers = []
-        conv_layers.append(nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=stride, padding=1, groups=in_channels, bias=False))
+        conv_layers.append(
+            nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=stride, padding=1, groups=in_channels,
+                      bias=False))
         conv_layers.append(nn.BatchNorm2d(in_channels))
         conv_layers.append(nn.ReLU())
         conv_layers.append(nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=False))
@@ -23,6 +24,7 @@ class Block(nn.Module):
     def forward(self, x):
         fwd = self.layers(x)
         return fwd
+
 
 class MobileNet(nn.Module):
     # (128,2) means conv channels=128, conv stride=2, by default conv stride=1
@@ -37,7 +39,7 @@ class MobileNet(nn.Module):
         self.num_output = 1
         self.in_channels = 32
         init_conv = []
-        
+
         init_conv.append(nn.Conv2d(3, self.in_channels, kernel_size=3, stride=1, padding=1, bias=False))
         init_conv.append(nn.BatchNorm2d(self.in_channels))
         init_conv.append(nn.ReLU(inplace=True))
@@ -50,7 +52,7 @@ class MobileNet(nn.Module):
 
         if self.input_size == 32:
             end_layers.append(nn.AvgPool2d(2))
-        else: # tiny imagenet
+        else:  # tiny imagenet
             end_layers.append(nn.AvgPool2d(4))
 
         end_layers.append(af.Flatten())

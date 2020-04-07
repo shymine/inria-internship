@@ -1,9 +1,11 @@
-import aux_funcs as af
-import network_architectures as arcs
+import getopt
+import sys
+
 import pandas as pd
 
-import sys
-import getopt
+import aux_funcs as af
+import network_architectures as arcs
+
 
 def train_model(models_path, device):
     _, sdn = arcs.create_resnet56(models_path, 'cifar10', save_type='d')
@@ -25,7 +27,7 @@ def train_model(models_path, device):
     lr_schedule_params = (milestones, gammas)
 
     optimizer, scheduler = af.get_full_optimizer(trained_model, opti_param, lr_schedule_params)
-    trained_model_name = sdn+'_training'
+    trained_model_name = sdn + '_training'
 
     print('Training: {}...'.format(trained_model_name))
     trained_model.to(device)
@@ -52,10 +54,10 @@ def main(confusion, model_name):
     if model_name == "":
         # af.create_path(models_path)
         # af.set_logger('outputs/train_models')
-    
+
         model, dataset = train_model(models_path, device)
-    else :
-        model, model_params = arcs.load_model(models_path, model_name,epoch=-1)
+    else:
+        model, model_params = arcs.load_model(models_path, model_name, epoch=-1)
 
     if confusion:
         confusion, confusion_correct = af.calculate_confusion(model, 'cifar10', device)
@@ -63,6 +65,7 @@ def main(confusion, model_name):
         correct_df = pd.DataFrame(confusion_correct)
         confusion_df.to_csv("confusion.csv")
         correct_df.to_csv("confusion_correct.csv")
+
 
 if __name__ == '__main__':
     try:
@@ -80,5 +83,5 @@ if __name__ == '__main__':
         if opt == "-m":
             model_name = arg
     print(model_name)
-    
+
     main(confusion, model_name)

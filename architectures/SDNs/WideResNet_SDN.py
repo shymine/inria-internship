@@ -1,11 +1,12 @@
+import math
+
+import numpy as np
 import torch
 import torch.nn as nn
 
-import numpy as np
-import math
-
 import aux_funcs as af
 import model_funcs as mf
+
 
 class wide_basic(nn.Module):
     def __init__(self, in_channels, channels, dropout_rate, params, stride=1):
@@ -38,7 +39,7 @@ class wide_basic(nn.Module):
         self.layers.append(shortcut)
 
         if add_output:
-            self.output = af.InternalClassifier(input_size, channels, num_classes) 
+            self.output = af.InternalClassifier(input_size, channels, num_classes)
             self.no_output = False
         else:
             self.output = None
@@ -50,7 +51,7 @@ class wide_basic(nn.Module):
         fwd = fwd + self.layers[1](x)
         out = self.output(fwd)
         return out
-    
+
     def only_forward(self, x):
         fwd = self.layers[0](x)
         fwd = fwd + self.layers[1](x)
@@ -60,6 +61,7 @@ class wide_basic(nn.Module):
         fwd = self.layers[0](x)
         fwd = fwd + self.layers[1](x)
         return fwd, 1, self.output(fwd)
+
 
 class WideResNet_SDN(nn.Module):
     def __init__(self, params):
@@ -82,40 +84,39 @@ class WideResNet_SDN(nn.Module):
         self.end_depth = 1
         self.cur_output_id = 0
 
-
-        if self.input_size ==  32: # cifar10 and cifar100
+        if self.input_size == 32:  # cifar10 and cifar100
             self.cur_input_size = self.input_size
             self.init_conv = nn.Conv2d(3, self.in_channels, kernel_size=3, stride=1, padding=1, bias=True)
-        elif self.input_size == 64: # tiny imagenet
-            self.cur_input_size = int(self.input_size/2)
+        elif self.input_size == 64:  # tiny imagenet
+            self.cur_input_size = int(self.input_size / 2)
             self.init_conv = nn.Conv2d(3, self.in_channels, kernel_size=3, stride=2, padding=1, bias=True)
-            
+
         self.layers = nn.ModuleList()
-        self.layers.extend(self._wide_layer(wide_basic, self.in_channels*self.widen_factor, block_id=0, stride=1))
-        self.cur_input_size = int(self.cur_input_size/2)
-        self.layers.extend(self._wide_layer(wide_basic, 32*self.widen_factor, block_id=1, stride=2))
-        self.cur_input_size = int(self.cur_input_size/2)
-        self.layers.extend(self._wide_layer(wide_basic, 64*self.widen_factor, block_id=2, stride=2))
+        self.layers.extend(self._wide_layer(wide_basic, self.in_channels * self.widen_factor, block_id=0, stride=1))
+        self.cur_input_size = int(self.cur_input_size / 2)
+        self.layers.extend(self._wide_layer(wide_basic, 32 * self.widen_factor, block_id=1, stride=2))
+        self.cur_input_size = int(self.cur_input_size / 2)
+        self.layers.extend(self._wide_layer(wide_basic, 64 * self.widen_factor, block_id=2, stride=2))
 
         end_layers = []
 
-        end_layers.append(nn.BatchNorm2d(64*self.widen_factor))
+        end_layers.append(nn.BatchNorm2d(64 * self.widen_factor))
         end_layers.append(nn.ReLU(inplace=True))
         end_layers.append(nn.AvgPool2d(kernel_size=8))
         end_layers.append(af.Flatten())
-        end_layers.append(nn.Linear(64*self.widen_factor, self.num_classes))
+        end_layers.append(nn.Linear(64 * self.widen_factor, self.num_classes))
         self.end_layers = nn.Sequential(*end_layers)
 
         if self.init_weights:
             self.initialize_weights()
-        
+
     def _wide_layer(self, block, channels, block_id, stride):
         num_blocks = self.num_blocks[block_id]
-        strides = [stride] + [1]*(num_blocks-1)
+        strides = [stride] + [1] * (num_blocks - 1)
         layers = []
         for cur_block_id, stride in enumerate(strides):
             add_output = self.add_out_nonflat[block_id][cur_block_id]
-            params  = (add_output, self.num_classes, self.cur_input_size, self.cur_output_id)
+            params = (add_output, self.num_classes, self.cur_input_size, self.cur_output_id)
             layers.append(block(self.in_channels, channels, self.dropout_rate, params, stride))
             self.in_channels = channels
             self.cur_output_id += add_output
@@ -132,7 +133,6 @@ class WideResNet_SDN(nn.Module):
                 m.bias.data.zero_()
             elif isinstance(m, nn.Linear):
                 m.bias.data.zero_()
-
 
     def forward(self, x):
         outputs = []
@@ -159,14 +159,14 @@ class WideResNet_SDN(nn.Module):
             if is_output:
                 outputs.append(output)
                 softmax = nn.functional.softmax(output[0], dim=0)
-                
+
                 confidence = torch.max(softmax)
                 confidences.append(confidence)
-            
+
                 if confidence >= self.confidence_threshold:
                     is_early = True
                     return output, output_id, is_early
-                
+
                 output_id += is_output
 
         output = self.end_layers(fwd)

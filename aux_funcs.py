@@ -2,36 +2,36 @@
 # contains auxiliary functions for optimizers, internal classifiers, confusion metric
 # conversion between CNNs and SDNs and also plotting
 
-import torch
-import numpy as np
-import torch.nn as nn
-import torch.nn.functional as F
-import os
-import random
-import os.path
 import copy
-import sys
-import pickle
 import itertools as it
+import os
+import os.path
+import pickle
+import random
+import sys
 
 import matplotlib
+import numpy as np
+import torch
+import torch.nn as nn
+
 matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
+
 plt.rcParams.update({'font.size': 13})
 
 from bisect import bisect_right
 from torch.optim import SGD, Adam
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.nn import CrossEntropyLoss
-from torch.autograd import Variable
 
-import model_funcs as mf
 import network_architectures as arcs
 
-from profiler import profile, profile_sdn
+from profiler import profile
 
 from data import CIFAR10, CIFAR100, TinyImagenet
+
 
 # to log the output of the experiments to a file
 class Logger(object):
@@ -57,9 +57,11 @@ class Logger(object):
     def __del__(self):
         self.log.close()
 
+
 def set_logger(log_file):
     sys.stdout = Logger(log_file, 'out')
-    #sys.stderr = Logger(log_file, 'err')
+    # sys.stderr = Logger(log_file, 'err')
+
 
 # the learning rate scheduler
 class MultiStepMultiLR(_LRScheduler):
@@ -76,44 +78,47 @@ class MultiStepMultiLR(_LRScheduler):
         for base_lr in self.base_lrs:
             cur_milestone = bisect_right(self.milestones, self.last_epoch)
             new_lr = base_lr * np.prod(self.gammas[:cur_milestone])
-            new_lr = round(new_lr,8)
+            new_lr = round(new_lr, 8)
             lrs.append(new_lr)
         return lrs
+
 
 # flatten the output of conv layers for fully connected layers
 class Flatten(nn.Module):
     def forward(self, input):
         return input.view(input.size(0), -1)
 
+
 # the formula for feature reduction in the internal classifiers
 def feature_reduction_formula(input_feature_map_size):
     if input_feature_map_size >= 4:
-        return int(input_feature_map_size/4)
+        return int(input_feature_map_size / 4)
     else:
         return -1
+
 
 # the internal classifier for all SDNs
 class InternalClassifier(nn.Module):
     def __init__(self, input_size, output_channels, num_classes, alpha=0.5):
         super(InternalClassifier, self).__init__()
-        #red_kernel_size = -1 # to test the effects of the feature reduction
-        red_kernel_size = feature_reduction_formula(input_size) # get the pooling size
+        # red_kernel_size = -1 # to test the effects of the feature reduction
+        red_kernel_size = feature_reduction_formula(input_size)  # get the pooling size
         self.output_channels = output_channels
 
         if red_kernel_size == -1:
-            self.linear = nn.Linear(output_channels*input_size*input_size, num_classes)
+            self.linear = nn.Linear(output_channels * input_size * input_size, num_classes)
             self.forward = self.forward_wo_pooling
         else:
-            red_input_size = int(input_size/red_kernel_size)
+            red_input_size = int(input_size / red_kernel_size)
             self.max_pool = nn.MaxPool2d(kernel_size=red_kernel_size)
             self.avg_pool = nn.AvgPool2d(kernel_size=red_kernel_size)
             self.alpha = nn.Parameter(torch.rand(1))
-            self.linear = nn.Linear(output_channels*red_input_size*red_input_size, num_classes)
+            self.linear = nn.Linear(output_channels * red_input_size * red_input_size, num_classes)
             self.forward = self.forward_w_pooling
 
     def forward_w_pooling(self, x):
-        avgp = self.alpha*self.max_pool(x)
-        maxp = (1 - self.alpha)*self.avg_pool(x)
+        avgp = self.alpha * self.max_pool(x)
+        maxp = (1 - self.alpha) * self.avg_pool(x)
         mixed = avgp + maxp
         return self.linear(mixed.view(mixed.size(0), -1))
 
@@ -122,21 +127,26 @@ class InternalClassifier(nn.Module):
 
 
 def get_random_seed():
-    return 1221 # 121 and 1221
+    return 1221  # 121 and 1221
+
 
 def get_subsets(input_list, sset_size):
     return list(it.combinations(input_list, sset_size))
+
 
 def set_random_seeds():
     torch.manual_seed(get_random_seed())
     np.random.seed(get_random_seed())
     random.seed(get_random_seed())
 
+
 def extend_lists(list1, list2, items):
     list1.append(items[0])
     list2.append(items[1])
 
-def overlay_two_histograms(save_path, save_name, hist_first_values, hist_second_values, first_label, second_label, title):
+
+def overlay_two_histograms(save_path, save_name, hist_first_values, hist_second_values, first_label, second_label,
+                           title):
     plt.hist([hist_first_values, hist_second_values], bins=25, label=[first_label, second_label])
     plt.axvline(np.mean(hist_first_values), color='k', linestyle='-', linewidth=3)
     plt.axvline(np.mean(hist_second_values), color='b', linestyle='--', linewidth=3)
@@ -157,16 +167,17 @@ def get_confusion_scores(outputs, normalize=None, device='cpu'):
         cur_disagreement = nn.functional.pairwise_distance(outputs[-1], output, p=p)
         cur_disagreement = cur_disagreement.to(device)
         for instance_id in range(outputs[0].size(0)):
-            confusion_scores[instance_id] +=  cur_disagreement[instance_id]
-    
+            confusion_scores[instance_id] += cur_disagreement[instance_id]
+
     if normalize is not None:
         for instance_id in range(outputs[0].size(0)):
             cur_confusion_score = confusion_scores[instance_id]
-            cur_confusion_score = cur_confusion_score - normalize[0] # subtract mean
-            cur_confusion_score = cur_confusion_score / normalize[1] # divide by the standard deviation
+            cur_confusion_score = cur_confusion_score - normalize[0]  # subtract mean
+            cur_confusion_score = cur_confusion_score / normalize[1]  # divide by the standard deviation
             confusion_scores[instance_id] = cur_confusion_score
 
     return confusion_scores
+
 
 def get_dataset(dataset, batch_size=128, add_trigger=False):
     if dataset == 'cifar10':
@@ -181,9 +192,11 @@ def load_cifar10(batch_size, add_trigger=False):
     cifar10_data = CIFAR10(batch_size=batch_size, add_trigger=add_trigger)
     return cifar10_data
 
+
 def load_cifar100(batch_size):
     cifar100_data = CIFAR100(batch_size=batch_size)
     return cifar100_data
+
 
 def load_tinyimagenet(batch_size):
     tiny_imagenet = TinyImagenet(batch_size=batch_size)
@@ -202,9 +215,9 @@ def get_output_relative_depths(model):
 
     total_depth += model.end_depth
 
-    #output_depths.append(total_depth)
- 
-    return np.array(output_depths)/total_depth, total_depth
+    # output_depths.append(total_depth)
+
+    return np.array(output_depths) / total_depth, total_depth
 
 
 def create_path(path):
@@ -213,7 +226,8 @@ def create_path(path):
 
 
 def model_exists(models_path, model_name):
-    return os.path.isdir(models_path+'/'+model_name)
+    return os.path.isdir(models_path + '/' + model_name)
+
 
 def get_nth_occurance_index(input_list, n):
     if n == -1:
@@ -221,31 +235,35 @@ def get_nth_occurance_index(input_list, n):
     else:
         return [i for i, n in enumerate(input_list) if n == 1][n]
 
+
 def get_lr(optimizers):
     if isinstance(optimizers, dict):
         return optimizers[list(optimizers.keys())[-1]].param_groups[-1]['lr']
     else:
         return optimizers.param_groups[-1]['lr']
 
+
 def get_full_optimizer(model, lr_params, stepsize_params):
-    lr=lr_params[0]
-    weight_decay=lr_params[1]
-    momentum=lr_params[2]
-    epoch=lr_params[3]
+    lr = lr_params[0]
+    weight_decay = lr_params[1]
+    momentum = lr_params[2]
+    epoch = lr_params[3]
 
     milestones = stepsize_params[0]
     gammas = stepsize_params[1]
 
-    optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, momentum=momentum, weight_decay=weight_decay)
+    optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, momentum=momentum,
+                    weight_decay=weight_decay)
     scheduler = MultiStepMultiLR(optimizer, milestones=milestones, gammas=gammas, last_epoch=epoch)
 
     return optimizer, scheduler
 
+
 def get_sdn_ic_only_optimizer(model, lr_params, stepsize_params):
     freeze_except_outputs(model)
 
-    lr=lr_params[0]
-    weight_decay=lr_params[1]
+    lr = lr_params[0]
+    weight_decay = lr_params[1]
 
     milestones = stepsize_params[0]
     gammas = stepsize_params[1]
@@ -254,11 +272,12 @@ def get_sdn_ic_only_optimizer(model, lr_params, stepsize_params):
     for layer in model.layers:
         if layer.no_output == False:
             param_list.append({'params': filter(lambda p: p.requires_grad, layer.output.parameters())})
-        
+
     optimizer = Adam(param_list, lr=lr, weight_decay=weight_decay)
     scheduler = MultiStepMultiLR(optimizer, milestones=milestones, gammas=gammas)
 
     return optimizer, scheduler
+
 
 def get_pytorch_device():
     device = 'cpu'
@@ -287,12 +306,11 @@ def get_all_trained_models_info(models_path, use_profiler=False, device='gpu'):
             print(task)
             net_type = model_params['network_type']
             print(net_type)
-            
+
             top1_test = model_params['test_top1_acc']
             top1_train = model_params['train_top1_acc']
             top5_test = model_params['test_top5_acc']
             top5_train = model_params['train_top5_acc']
-
 
             print('Top1 Test accuracy: {}'.format(top1_test[-1]))
             print('Top5 Test accuracy: {}'.format(top5_test[-1]))
@@ -313,9 +331,9 @@ def get_all_trained_models_info(models_path, use_profiler=False, device='gpu'):
 
                 else:
                     total_ops, total_params = profile(model, input_size, device)
-                    print("#Ops: %f GOps"%(total_ops/1e9))
-                    print("#Parameters: %f M"%(total_params/1e6))
-            
+                    print("#Ops: %f GOps" % (total_ops / 1e9))
+                    print("#Parameters: %f M" % (total_params / 1e6))
+
             print('------------------------')
         except:
             print('FAIL: {}'.format(model_name))
@@ -330,7 +348,7 @@ def sdn_prune(sdn_path, sdn_name, prune_after_output, epoch=-1, preloaded=None):
     else:
         sdn_model = preloaded[0]
         sdn_params = preloaded[1]
-    
+
     output_layer = get_nth_occurance_index(sdn_model.add_output, prune_after_output)
 
     pruned_model = copy.deepcopy(sdn_model)
@@ -384,12 +402,13 @@ def cnn_to_sdn(cnn_path, cnn_name, sdn_params, epoch=-1, preloaded=None):
         sdn_layer = sdn_model.layers[layer_id]
         sdn_layer.layers = cnn_layer.layers
         layers.append(sdn_layer)
-    
+
     sdn_model.layers = layers
 
     sdn_model.end_layers = cnn_model.end_layers
 
     return sdn_model, sdn_params
+
 
 def sdn_to_cnn(sdn_path, sdn_name, epoch=-1, preloaded=None):
     print('Converting a SDN to a CNN...')
@@ -411,7 +430,7 @@ def sdn_to_cnn(sdn_path, sdn_name, epoch=-1, preloaded=None):
         cnn_layer = cnn_model.layers[layer_id]
         cnn_layer.layers = sdn_layer.layers
         layers.append(cnn_layer)
-    
+
     cnn_model.layers = layers
 
     cnn_model.end_layers = sdn_model.end_layers
@@ -436,31 +455,32 @@ def save_tinyimagenet_classname():
     filename = 'tinyimagenet_classes'
     dataset = get_dataset('tinyimagenet')
     tinyimagenet_classes = {}
-    
+
     for index, name in enumerate(dataset.testset_paths.classes):
         tinyimagenet_classes[index] = name
 
     with open(filename, 'wb') as f:
         pickle.dump(tinyimagenet_classes, f, pickle.HIGHEST_PROTOCOL)
 
+
 def get_tinyimagenet_classes(prediction=None):
     filename = 'tinyimagenet_classes'
     with open(filename, 'rb') as f:
         tinyimagenet_classes = pickle.load(f)
-    
+
     if prediction is not None:
         return tinyimagenet_classes[prediction]
 
     return tinyimagenet_classes
 
+
 def calculate_confusion(model, dataset, device='cpu'):
     print("calculating confusion")
-    loader = get_dataset(dataset).train_loader #test_loader
+    loader = get_dataset(dataset).train_loader  # test_loader
     confusion = []
     confusion_correct = []
     correct_found = []
     print("batch size {}".format(loader.batch_size))
-
 
     for l in range(model.num_output):
         confusion.append([0 for _ in range(model.num_output)])
@@ -487,16 +507,17 @@ def calculate_confusion(model, dataset, device='cpu'):
                         pred_j = pred[example][j]
                         if pred_i == pred_j:
                             confusion[i][j] += 1
-                            if count :
+                            if count:
                                 confusion_correct[i][j] += 1
             example_num += b_y.size(0)
-        confusion = (np.array(confusion)/example_num).tolist()
+        confusion = (np.array(confusion) / example_num).tolist()
         for i, arr in enumerate(confusion_correct):
-            confusion_correct[i] = [elm/correct_found[i] for elm in arr]
+            confusion_correct[i] = [elm / correct_found[i] for elm in arr]
 
     print("confusion: {}".format(confusion))
     print("confusion_correct: {}".format(confusion_correct))
     return confusion, confusion_correct
+
 
 def format_outputs(outputs):
     res = []
@@ -506,3 +527,10 @@ def format_outputs(outputs):
             out.append(outputs[output][example].argmax())
         res.append(out)
     return res
+
+
+def print_acc(arr):
+    str = "accuracies:\n"
+    for i in arr:
+        str += "{}: {}, ".format(i[1]['name'], i[1]['test_top1_acc'][-1])
+    print(str)

@@ -6,6 +6,7 @@ import torch.nn as nn
 
 import aux_funcs as af
 
+
 def count_conv2d(m, x, y):
     x = x[0]
 
@@ -27,6 +28,7 @@ def count_conv2d(m, x, y):
     # incase same conv is used multiple times
     m.total_ops += torch.Tensor([int(total_ops)])
 
+
 def count_bn2d(m, x, y):
     x = x[0]
 
@@ -37,6 +39,7 @@ def count_bn2d(m, x, y):
 
     m.total_ops += torch.Tensor([int(total_ops)])
 
+
 def count_relu(m, x, y):
     x = x[0]
 
@@ -44,6 +47,7 @@ def count_relu(m, x, y):
     total_ops = nelements
 
     m.total_ops += torch.Tensor([int(total_ops)])
+
 
 def count_softmax(m, x, y):
     x = x[0]
@@ -57,12 +61,14 @@ def count_softmax(m, x, y):
 
     m.total_ops += torch.Tensor([int(total_ops)])
 
+
 def count_maxpool(m, x, y):
     kernel_ops = torch.prod(torch.Tensor([m.kernel_size])) - 1
     num_elements = y.numel()
     total_ops = kernel_ops * num_elements
 
     m.total_ops += torch.Tensor([int(total_ops)])
+
 
 def count_avgpool(m, x, y):
     total_add = torch.prod(torch.Tensor([m.kernel_size])) - 1
@@ -73,6 +79,7 @@ def count_avgpool(m, x, y):
 
     m.total_ops += torch.Tensor([int(total_ops)])
 
+
 def count_linear(m, x, y):
     # per output element
     total_mul = m.in_features
@@ -81,6 +88,7 @@ def count_linear(m, x, y):
     total_ops = (total_mul + total_add) * num_elements
 
     m.total_ops += torch.Tensor([int(total_ops)])
+
 
 def profile_sdn(model, input_size, device):
     inp = (1, 3, input_size, input_size)
@@ -109,9 +117,9 @@ def profile_sdn(model, input_size, device):
         elif isinstance(m, (nn.Dropout, nn.Dropout2d, nn.Dropout3d)):
             pass
         else:
-            #print("Not implemented for ", m)
+            # print("Not implemented for ", m)
             pass
-        
+
     model.apply(add_hooks)
 
     x = torch.zeros(inp)
@@ -130,7 +138,7 @@ def profile_sdn(model, input_size, device):
     for layer_id, m in enumerate(model.modules()):
         if isinstance(m, af.InternalClassifier):
             cur_output_layer_id = layer_id
-        
+
         if layer_id == cur_output_layer_id + 1:
             if isinstance(m, nn.Linear):
                 wait_for = 1
@@ -143,17 +151,17 @@ def profile_sdn(model, input_size, device):
         total_params += m.total_params
 
         if layer_id == cur_output_layer_id + wait_for:
-            output_total_ops[cur_output_id] = total_ops.numpy()[0]/1e9
-            output_total_params[cur_output_id] = total_params.numpy()[0]/1e6
+            output_total_ops[cur_output_id] = total_ops.numpy()[0] / 1e9
+            output_total_params[cur_output_id] = total_params.numpy()[0] / 1e6
             cur_output_id += 1
 
-    output_total_ops[cur_output_id] = total_ops.numpy()[0]/1e9
-    output_total_params[cur_output_id] = total_params.numpy()[0]/1e6
+    output_total_ops[cur_output_id] = total_ops.numpy()[0] / 1e9
+    output_total_params[cur_output_id] = total_params.numpy()[0] / 1e6
 
     return output_total_ops, output_total_params
 
-def profile(model, input_size, device):
 
+def profile(model, input_size, device):
     inp = (1, 3, input_size, input_size)
     model.eval()
 
@@ -180,9 +188,9 @@ def profile(model, input_size, device):
         elif isinstance(m, (nn.Dropout, nn.Dropout2d, nn.Dropout3d)):
             pass
         else:
-            #print("Not implemented for ", m)
+            # print("Not implemented for ", m)
             pass
-        
+
     model.apply(add_hooks)
 
     x = torch.zeros(inp)
@@ -199,4 +207,3 @@ def profile(model, input_size, device):
     total_params = total_params
 
     return total_ops, total_params
-

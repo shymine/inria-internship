@@ -2,17 +2,12 @@
 # For training CNNs and SDNs via IC-only and SDN-training strategies
 # It trains and save the resulting models to an output directory specified in the main function
 
-import copy
 import torch
-import time
-import os
-import random
-import numpy as np
 
 import aux_funcs  as af
 import network_architectures as arcs
-
 from architectures.CNNs.VGG import VGG
+
 
 def train(models_path, untrained_models, sdn=False, ic_only_sdn=False, device='cpu'):
     print('Training models...')
@@ -37,25 +32,25 @@ def train(models_path, untrained_models, sdn=False, ic_only_sdn=False, device='c
             gammas = model_params['ic_only']['gammas']
 
             model_params['optimizer'] = 'Adam'
-            
-            trained_model.ic_only = True
 
+            trained_model.ic_only = True
 
         optimization_params = (learning_rate, weight_decay, momentum)
         lr_schedule_params = (milestones, gammas)
 
         if sdn:
             if ic_only_sdn:
-                optimizer, scheduler = af.get_sdn_ic_only_optimizer(trained_model, optimization_params, lr_schedule_params)
-                trained_model_name = base_model+'_ic_only'
+                optimizer, scheduler = af.get_sdn_ic_only_optimizer(trained_model, optimization_params,
+                                                                    lr_schedule_params)
+                trained_model_name = base_model + '_ic_only'
 
             else:
                 optimizer, scheduler = af.get_full_optimizer(trained_model, optimization_params, lr_schedule_params)
-                trained_model_name = base_model+'_sdn_training'
+                trained_model_name = base_model + '_sdn_training'
 
         else:
-                optimizer, scheduler = af.get_full_optimizer(trained_model, optimization_params, lr_schedule_params)
-                trained_model_name = base_model
+            optimizer, scheduler = af.get_full_optimizer(trained_model, optimization_params, lr_schedule_params)
+            trained_model_name = base_model
 
         print('Training: {}...'.format(trained_model_name))
         trained_model.to(device)
@@ -71,23 +66,25 @@ def train(models_path, untrained_models, sdn=False, ic_only_sdn=False, device='c
         print('Training took {} seconds...'.format(total_training_time))
         arcs.save_model(trained_model, model_params, models_path, trained_model_name, epoch=-1)
 
+
 def train_sdns(models_path, networks, ic_only=False, device='cpu'):
-    if ic_only: # if we only train the ICs, we load a pre-trained CNN
+    if ic_only:  # if we only train the ICs, we load a pre-trained CNN
         load_epoch = -1
-    else: # if we train both ICs and the orig network, we load an untrained CNN
+    else:  # if we train both ICs and the orig network, we load an untrained CNN
         load_epoch = 0
 
     for sdn_name in networks:
         cnn_to_tune = sdn_name.replace('sdn', 'cnn')
         sdn_params = arcs.load_params(models_path, sdn_name)
         sdn_params = arcs.get_net_params(sdn_params['network_type'], sdn_params['task'])
-        sdn_model, _ = af.cnn_to_sdn(models_path, cnn_to_tune, sdn_params, load_epoch) # load the CNN and convert it to a SDN
-        arcs.save_model(sdn_model, sdn_params, models_path, sdn_name, epoch=0) # save the resulting SDN
+        sdn_model, _ = af.cnn_to_sdn(models_path, cnn_to_tune, sdn_params,
+                                     load_epoch)  # load the CNN and convert it to a SDN
+        arcs.save_model(sdn_model, sdn_params, models_path, sdn_name, epoch=0)  # save the resulting SDN
     train(models_path, networks, sdn=True, ic_only_sdn=ic_only, device=device)
 
 
 def train_models(models_path, device='cpu'):
-    tasks = ['cifar10']#, 'cifar100', 'tinyimagenet']
+    tasks = ['cifar10']  # , 'cifar100', 'tinyimagenet']
 
     cnns = []
     sdns = []
@@ -100,7 +97,7 @@ def train_models(models_path, device='cpu'):
 
     # train(models_path, cnns, sdn=False, device=device)
     # train_sdns(models_path, sdns, ic_only=True, device=device) # train SDNs with IC-only strategy
-    train_sdns(models_path, sdns, ic_only=False, device=device) # train SDNs with SDN-training strategy
+    train_sdns(models_path, sdns, ic_only=False, device=device)  # train SDNs with SDN-training strategy
 
 
 # for backdoored models, load a backdoored CNN and convert it to an SDN via IC-only strategy
@@ -113,17 +110,19 @@ def sdn_ic_only_backdoored(device):
 
     # Use the class VGG
     backdoored_cnn = VGG(params)
-    backdoored_cnn.load_state_dict(torch.load('{}/{}'.format(path, backdoored_cnn_name), map_location='cpu'), strict=False)
+    backdoored_cnn.load_state_dict(torch.load('{}/{}'.format(path, backdoored_cnn_name), map_location='cpu'),
+                                   strict=False)
 
     # convert backdoored cnn into a sdn
-    backdoored_sdn, sdn_params = af.cnn_to_sdn(None, backdoored_cnn, params, preloaded=backdoored_cnn) # load the CNN and convert it to a sdn
-    arcs.save_model(backdoored_sdn, sdn_params, path, save_sdn_name, epoch=0) # save the resulting sdn
+    backdoored_sdn, sdn_params = af.cnn_to_sdn(None, backdoored_cnn, params,
+                                               preloaded=backdoored_cnn)  # load the CNN and convert it to a sdn
+    arcs.save_model(backdoored_sdn, sdn_params, path, save_sdn_name, epoch=0)  # save the resulting sdn
 
     networks = [save_sdn_name]
 
     train(path, networks, sdn=True, ic_only_sdn=True, device=device)
 
-    
+
 def main():
     random_seed = af.get_random_seed()
     af.set_random_seeds()
@@ -131,10 +130,11 @@ def main():
     device = af.get_pytorch_device()
     models_path = 'networks/{}'.format(af.get_random_seed())
     af.create_path(models_path)
-    af.set_logger('outputs/train_models')#.format(af.get_random_seed()))
+    af.set_logger('outputs/train_models')  # .format(af.get_random_seed()))
 
     train_models(models_path, device)
-    #sdn_ic_only_backdoored(device)
+    # sdn_ic_only_backdoored(device)
+
 
 if __name__ == '__main__':
     main()
