@@ -67,6 +67,8 @@ def multi_experiments(models_path, device):
     train0_model, train0_params = arcs.create_resnet_iterative(models_path, 'iterative', mode='0', return_name=False)
     train1_model, train1_params = arcs.create_resnet_iterative(models_path, 'iterative', mode='1', return_name=False)
     train2_model, train2_params = arcs.create_resnet_iterative(models_path, 'iterative', mode='2', return_name=False)
+    train3_model, train3_params = arcs.create_resnet_iterative(models_path, 'iterative', mode='3', return_name=False)
+
     full_ic_model, full_ic_params = arcs.create_resnet_iterative(models_path, 'full_ic', return_name=False)
     full_model, full_params = arcs.create_resnet_iterative(models_path, 'full', return_name=False)
 
@@ -83,18 +85,21 @@ def multi_experiments(models_path, device):
     train0_name = train0_params['base_model'] + 'train0_training'
     train1_name = train1_params['base_model'] + 'train1_training'
     train2_name = train2_params['base_model'] + 'train2_training'
+    train3_name = train3_params['base_model'] + 'train3_training'
     full_ic_name = full_ic_params['base_model'] + '_training'
-    full_name = full_params['base_model'] + 'training'
+    full_name = full_params['base_model'] + '_training'
 
     train0_params['name'] = train0_name
     train1_params['name'] = train1_name
     train2_params['name'] = train2_name
+    train3_params['name'] = train3_name
     full_ic_params['name'] = full_ic_name
     full_params['name'] = full_name
 
     train0_model.to(device)
     train1_model.to(device)
     train2_model.to(device)
+    train3_model.to(device)
     full_ic_model.to(device)
     full_model.to(device)
 
@@ -104,6 +109,7 @@ def multi_experiments(models_path, device):
     train0_optimizer, train0_scheduler = af.get_full_optimizer(train0_model, opti_param, lr_schedule_params)
     train1_optimizer, train1_scheduler = af.get_full_optimizer(train1_model, opti_param, lr_schedule_params)
     train2_optimizer, train2_scheduler = af.get_full_optimizer(train2_model, opti_param, lr_schedule_params)
+    train3_optimizer, train3_scheduler = af.get_full_optimizer(train3_model, opti_param, lr_schedule_params)
     full_ic_optimizer, full_ic_scheduler = af.get_full_optimizer(full_ic_model, opti_param, lr_schedule_params)
     full_optimizer, full_scheduler = af.get_full_optimizer(full_model, opti_param, lr_schedule_params)
 
@@ -113,6 +119,7 @@ def multi_experiments(models_path, device):
                                              device)
     train2_metrics = train2_model.train_func(train2_model, dataset, num_epochs, train2_optimizer, train2_scheduler,
                                              device)
+    train3_metrics = train3_model.train_func(train3_model, dataset, num_epochs, train3_optimizer, train3_scheduler, device)
     full_ic_metrics = full_ic_model.train_func(full_ic_model, dataset, num_epochs, full_ic_optimizer, full_ic_scheduler,
                                                device)
     full_metrics = full_model.train_func(full_model, dataset, num_epochs, full_optimizer, full_scheduler, device, True)
@@ -120,17 +127,18 @@ def multi_experiments(models_path, device):
     _link_metrics(train0_params, train0_metrics)
     _link_metrics(train1_params, train1_metrics)
     _link_metrics(train2_params, train2_metrics)
+    _link_metrics(train3_params, train3_metrics)
     _link_metrics(full_ic_params, full_ic_metrics)
     _link_metrics(full_params, full_metrics)
 
     arcs.save_model(train0_model, train0_params, models_path, train0_name, epoch=-1)
     arcs.save_model(train1_model, train1_params, models_path, train1_name, epoch=-1)
     arcs.save_model(train2_model, train2_params, models_path, train2_name, epoch=-1)
-
+    arcs.save_model(train3_model, train3_params, models_path, train3_name, epoch=-1)
     arcs.save_model(full_ic_model, full_ic_params, models_path, full_ic_name, epoch=-1)
     arcs.save_model(full_model, full_params, models_path, full_name, epoch=-1)
 
-    return [(train0_model, train0_params), (train1_model, train1_params), (train2_model, train2_params),
+    return [(train0_model, train0_params), (train1_model, train1_params), (train2_model, train2_params), (train3_model, train3_params),
             (full_ic_model, full_ic_params), (full_model, full_params)]
 
 
