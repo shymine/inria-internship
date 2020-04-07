@@ -1,0 +1,6 @@
+cifar10_resnet_iterativetrain0_training: [77.09, 77.33, 77.159996, 75.79], 
+cifar10_resnet_iterativetrain1_training: [76.63, 78.32, 78.15, 76.9], 
+cifar10_resnet_iterativetrain2_training: [76.17, 76.88, 74.439995, 73.47], 
+cifar10_resnet_iterative_training: [66.82, 77.08, 80.72, 81.869995], 
+cifar10_resnet_iterative_training: 81.77999877929688,
+

@@ -33,7 +33,7 @@ def train(models_path, device):
     full_opti, full_sch = af.get_full_optimizer(full, opti_param, lr_schedule_params)
 
     metrics = model.train_func(model, dataset, num_epochs, optimizer, scheduler, device)
-    full_metrics = full.train_func(full, dataset, num_epochs, optimizer, scheduler, device)
+    full_metrics = full.train_func(full, dataset, num_epochs, full_opti, full_sch, device)
 
     model_params['train_top1_acc'] = metrics['train_top1_acc']
     model_params['train_top3_acc'] = metrics['train_top3_acc']
@@ -49,7 +49,7 @@ def train(models_path, device):
     full_params['epoch_times'] = full_metrics['epoch_times']
     full_params['lrs'] = full_metrics['lrs']
 
-    return (model, model_params), (full, full_params)
+    return [(model, model_params), (full, full_params)]
 
 
 def main():
