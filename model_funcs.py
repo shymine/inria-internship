@@ -733,7 +733,6 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
         if epoch in epoch_growth:
             grown_layers = model.grow()
 
-            # TODO: prune new layers and freeze the older ones.
             model.to(device)
             optimizer.add_param_group({'params': grown_layers})
             print("model grow")
