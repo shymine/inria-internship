@@ -33,7 +33,9 @@ def train(models_path, device):
     full_opti, full_sch = af.get_full_optimizer(full, opti_param, lr_schedule_params)
 
     metrics = model.train_func(model, dataset, num_epochs, optimizer, scheduler, device)
+    print("\nEnd of prune training\n")
     full_metrics = full.train_func(full, dataset, num_epochs, full_opti, full_sch, device)
+    print("\nEnd of full training\n")
 
     model_params['train_top1_acc'] = metrics['train_top1_acc']
     model_params['train_top3_acc'] = metrics['train_top3_acc']
