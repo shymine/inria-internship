@@ -439,7 +439,7 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
     model.to(device)
     model.to_train()
     for epoch in range(1, epochs + 1):
-        epoch_routine(model, optimizer, scheduler, epoch, epochs, augment, metrics, device)
+        epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
 
         if epoch in epoch_growth:
             grown_layers = model.grow()
@@ -475,7 +475,7 @@ def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
     print("max_epoch: {}".format(max_epoch))
 
     for epoch in range(max_epoch):
-        epoch_routine(model, optimizer, scheduler, epoch, epochs, augment, metrics, device)
+        epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
 
         if epoch in epoch_growth:
             grown_layers = model.grow()
@@ -546,7 +546,7 @@ def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
 
     for epoch in range(epochs):
 
-        epoch_routine(model, optimizer, scheduler, epoch, epochs, augment, metrics, device)
+        epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
 
         if epoch in epoch_growth:
             for params in model.parameters(True):
@@ -598,7 +598,7 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
     count_pruned = prune(model, 0.1, loader, sdn_loss, count_pruned, device)
 
     for epoch in range(1, epochs + 1):
-        epoch_routine(model, optimizer, scheduler, epoch, epochs, augment, metrics, device)
+        epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
 
         if epoch in epoch_growth:
             grown_layers = model.grow()
@@ -617,7 +617,7 @@ def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
     return {}
 
 
-def epoch_routine(model, optimizer, scheduler, epoch, epochs, augment, metrics, device):
+def epoch_routine(model, datas, optimizer, scheduler, epoch, epochs, augment, metrics, device):
     scheduler.step()
     cur_lr = af.get_lr(optimizer)
     print('\nEpoch: {}/{}'.format(epoch, epochs))
@@ -629,18 +629,18 @@ def epoch_routine(model, optimizer, scheduler, epoch, epochs, augment, metrics, 
 
     start_time = time.time()
     model.train()
-    loader = get_loader(data, augment)
+    loader = get_loader(datas, augment)
     for i, batch in enumerate(loader):
         total_loss = sdn_training_step(optimizer, model, cur_coeffs, batch, device)
         if i % 100 == 0:
             print("Loss: {}".format(total_loss))
 
-    top1_test, top3_test = sdn_test(model, data.test_loader, device)
+    top1_test, top3_test = sdn_test(model, datas.test_loader, device)
     end_time = time.time()
 
     print('Top1 Test accuracies: {}'.format(top1_test))
     print('Top3 Test accuracies: {}'.format(top3_test))
-    top1_train, top3_train = sdn_test(model, get_loader(data, augment), device)
+    top1_train, top3_train = sdn_test(model, get_loader(datas, augment), device)
     print('Top1 Train accuracies: {}'.format(top1_train))
     print('Top3 Train accuracies: {}'.format(top3_train))
 
