@@ -3,8 +3,8 @@ import network_architectures as arcs
 
 
 def train(models_path, device):
-    model, model_params = arcs.create_resnet_iterative(models_path, 'iterative', mode=3, return_name=False)
-    full, full_params = arcs.create_resnet_iterative(models_path, 'full', mode=0, return_name=False)
+    model, model_params = arcs.create_resnet_iterative(models_path, 'iterative', mode='3', return_name=False)
+    full, full_params = arcs.create_resnet_iterative(models_path, 'full', mode='0', return_name=False)
 
     print("Training")
     dataset = af.get_dataset('cifar10', 128)
