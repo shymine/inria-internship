@@ -119,7 +119,8 @@ def multi_experiments(models_path, device):
                                              device)
     train2_metrics = train2_model.train_func(train2_model, dataset, num_epochs, train2_optimizer, train2_scheduler,
                                              device)
-    train3_metrics = train3_model.train_func(train3_model, dataset, num_epochs, train3_optimizer, train3_scheduler, device)
+    train3_metrics = train3_model.train_func(train3_model, dataset, num_epochs, train3_optimizer, train3_scheduler,
+                                             device)
     full_ic_metrics = full_ic_model.train_func(full_ic_model, dataset, num_epochs, full_ic_optimizer, full_ic_scheduler,
                                                device)
     full_metrics = full_model.train_func(full_model, dataset, num_epochs, full_optimizer, full_scheduler, device, True)
@@ -138,7 +139,8 @@ def multi_experiments(models_path, device):
     arcs.save_model(full_ic_model, full_ic_params, models_path, full_ic_name, epoch=-1)
     arcs.save_model(full_model, full_params, models_path, full_name, epoch=-1)
 
-    return [(train0_model, train0_params), (train1_model, train1_params), (train2_model, train2_params), (train3_model, train3_params),
+    return [(train0_model, train0_params), (train1_model, train1_params), (train2_model, train2_params),
+            (train3_model, train3_params),
             (full_ic_model, full_ic_params), (full_model, full_params)]
 
 
