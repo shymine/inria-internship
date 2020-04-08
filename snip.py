@@ -104,6 +104,7 @@ def snip_skip_layers(model, keep_ratio, loader, loss, device='cpu'):
     grads_abs = []
     for layer in _model.modules():
         if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
+            print("layer.weight_mask: {}".format(layer.weight_mask))
             grads_abs.append(torch.abs(layer.weight_mask.grad))
     all_scores = torch.cat([torch.flatten(x) for x in grads_abs])
     norm_factor = torch.sum(all_scores)
