@@ -504,7 +504,6 @@ def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
 
 def sdn_loss(output, label, coeffs=None):
     total_loss = 0.0
-    print("\ncoeffs: {}".format(coeffs))
     if coeffs == None:
         coeffs = [1 for _ in range(len(output) - 1)]
     for ic_id in range(len(output) - 1):
