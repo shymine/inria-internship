@@ -104,7 +104,7 @@ def snip_skip_layers(model, keep_ratio, loader, loss, device='cpu'):
     grads_abs = []
     for layer in _model.modules():
         if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
-            if not layer.weight_mask.grad:
+            if layer.weight_mask.grad is None:
                 print("None")
                 print("layer: {}".format(layer))
                 print("weight_mask: {}".format(layer.weight_mask))
