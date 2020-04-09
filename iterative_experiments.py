@@ -67,7 +67,7 @@ def main(mode):
         0
     ]
 
-    arr = multi_experiments(models_path, device)
+    arr = multi_experiments(models_path, zip(create_params, create_bool), device)
     af.print_acc(arr)
 
 
