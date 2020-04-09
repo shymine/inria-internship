@@ -18,7 +18,7 @@ def train_model(models_path, params, device):
     model, params = arcs.create_resnet_iterative(models_path, type, mode, pruning, False)
     dataset = af.get_dataset('cifar10')
     params['name'] = params['base_model'] + '_{}_{}'.format(type, mode)
-    opti_param = (params['learning_rate'], params['weight_decay'], params['momentum'], -1)
+    opti_param = (params['learning_rate']/10, params['weight_decay'], params['momentum'], -1)
     lr_schedule_params = (params['milestones'], params['gammas'])
 
     model.to(device)
@@ -50,12 +50,14 @@ def main(mode):
     random_seed = af.get_random_seed()
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
-    # iter, full_ic, full = train_model(models_path, device, mode)
-    # print("accuracies:\niter: {}, full_ic: {}, full: {}".format(iter[1]['test_top1_acc'][-1], full_ic[1]['test_top1_acc'][-1], full[1]['test_top1_acc'][-1]))
     create_params = [
         ('iterative', '0', (False, None)),
         ('iterative', '1', (False, None)),
         ('iterative', '2', (False, None)),
+        ('iterative', '0', (True, 0.5)),
+        ('iterative', '1', (True, 0.5)),
+        ('iterative', '2', (True, 0.5)),
+
         ('full', None, (False, None)),
         ('full_ic', None, (False, None))
     ]
@@ -63,6 +65,10 @@ def main(mode):
         1,
         0,
         0,
+        1,
+        0,
+        0,
+
         0,
         0
     ]

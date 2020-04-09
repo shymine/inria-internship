@@ -95,6 +95,9 @@ def snip_skip_layers(model, keep_ratio, loader, loss, device='cpu'):
             if lin:
                 layer.forward = types.MethodType(snip_forward_linear, layer)
 
+    #compte le nombre de layers qui ont été pruned dans le modèle
+    print("count_pruned in snip: {}".format(count_pruned))
+
     _model.to(device)
     _model.zero_grad()
     outputs = _model(inputs)
@@ -118,7 +121,7 @@ def snip_skip_layers(model, keep_ratio, loader, loss, device='cpu'):
     for g in grads_abs:
         keep_masks.append(((g / norm_factor) >= acceptable_score).float())
 
-    print("count_pruned in snip: {}".format(count_pruned))
+
     return (keep_masks, count_pruned)
 
 
@@ -138,6 +141,7 @@ def apply_prune_mask_skip_layers(model, masks, count_pruned):
             return hook
 
         if count >= count_pruned:
+            # l'id des couches (linear and conv2d not blocks) that are pruned
             print("pruned: {}".format(count))
             layer.weight.data[mask == 0.] = 0.
             layer.weight.register_hook(hook_factory(mask))
