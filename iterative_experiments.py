@@ -18,6 +18,8 @@ def train_model(models_path, params, device):
     model, params = arcs.create_resnet_iterative(models_path, type, mode, pruning, False)
     dataset = af.get_dataset('cifar10')
     params['name'] = params['base_model'] + '_{}_{}'.format(type, mode)
+    if model.prune:
+        params['name'] += "_prune_{}".format(model.keep_ratio*100)
     opti_param = (params['learning_rate']/10, params['weight_decay'], params['momentum'], -1)
     lr_schedule_params = (params['milestones'], params['gammas'])
 
@@ -50,27 +52,32 @@ def main(mode):
     random_seed = af.get_random_seed()
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
+    # create_params = [
+    #     ('iterative', '0', (False, None)),
+    #     ('iterative', '1', (False, None)),
+    #     ('iterative', '2', (False, None)),
+    #     ('iterative', '0', (True, 0.5)),
+    #     ('iterative', '1', (True, 0.5)),
+    #     ('iterative', '2', (True, 0.5)),
+    #
+    #     ('full', None, (False, None)),
+    #     ('full_ic', None, (False, None))
+    # ]
     create_params = [
         ('iterative', '0', (False, None)),
-        ('iterative', '1', (False, None)),
-        ('iterative', '2', (False, None)),
+        ('iterative', '0', (True, 0.8)),
+        ('iterative', '0', (True, 0.6)),
         ('iterative', '0', (True, 0.5)),
-        ('iterative', '1', (True, 0.5)),
-        ('iterative', '2', (True, 0.5)),
-
-        ('full', None, (False, None)),
-        ('full_ic', None, (False, None))
+        ('iterative', '0', (True, 0.4)),
+        ('iterative', '0', (True, 0.3)),
+        ('iterative', '0', (True, 0.2)),
+        ('iterative', '0', (True, 0.1)),
+        ('iterative', '0', (True, 0.05)),
     ]
     create_bool = [
-        1,
-        0,
-        0,
-        1,
-        0,
-        0,
-
-        0,
-        0
+        1, 1, 1,
+        1, 1, 1,
+        1, 1, 1
     ]
 
     arr = multi_experiments(models_path, zip(create_params, create_bool), device)
