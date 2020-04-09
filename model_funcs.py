@@ -435,9 +435,13 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
 
     max_coeffs = calc_coeff(model)
     print('max_coeffs: {}'.format(max_coeffs))
-    print('layers: {}'.format(model.layers))
     model.to(device)
     model.to_train()
+
+    if model.prune:
+        loader = get_loader(data, augment)
+        count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, 0, device)
+
     for epoch in range(1, epochs + 1):
         epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
 
@@ -446,7 +450,9 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
             model.to(device)
             optimizer.add_param_group({'params': grown_layers})
             print("model grow")
-            print("layers: {}".format(model.layers))
+            if model.prune:
+                loader = get_loader(data, augment)
+                count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
     return metrics
 
 
@@ -474,6 +480,10 @@ def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
     max_epoch = int(epoch_growth[-1]) + epochs
     print("max_epoch: {}".format(max_epoch))
 
+    if model.prune:
+        loader = get_loader(data, augment)
+        count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, 0, device)
+
     for epoch in range(max_epoch):
         epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
 
@@ -483,6 +493,9 @@ def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
             optimizer.add_param_group({'params': grown_layers})
             print("model grow")
             print("layers: {}".format(model.layers))
+            if model.prune:
+                loader = get_loader(data, augment)
+                count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
 
         if epoch in freeze_epochs:
             index = freeze_epochs.index(epoch)
@@ -544,6 +557,10 @@ def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
     model.to(device)
     model.to_train()
 
+    if model.prune:
+        loader = get_loader(data, augment)
+        count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, 0, device)
+
     for epoch in range(epochs):
 
         epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
@@ -555,6 +572,9 @@ def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
             model.to(device)
             optimizer.add_param_group({'params': grown_layers})
             print("model grow")
+            if model.prune:
+                loader = get_loader(data, augment)
+                count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
 
         if epoch in unfreeze_epochs:
             for params in model.parameters(True):
@@ -563,9 +583,8 @@ def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
     return metrics
 
 
-# training vanilla with pruning
 def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
-    print("iter training 2")
+    print("iter training 3")
     augment = model.augment_training
     metrics = {
         'epoch_times': [],
@@ -575,40 +594,6 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
         'train_top3_acc': [],
         'lrs': []
     }
-
-    count_pruned = 0
-
-    def prune(model, keep_ratio, loader, loss, count_pruned, device):
-        masks, cur_pruned = snip.snip_skip_layers(model, keep_ratio, loader, loss, device)
-        snip.apply_prune_mask_skip_layers(model, masks, count_pruned)
-        return cur_pruned
-
-    loader = get_loader(data, augment)
-
-    epoch_growth = [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
-    print("array params: num_ics {}, epochs {}".format(model.num_ics, epochs))
-    print("epochs growth: {}".format(epoch_growth))
-
-    max_coeffs = calc_coeff(model)
-    print('max_coeffs: {}'.format(max_coeffs))
-    print('layers: {}'.format(model.layers))
-    model.to(device)
-    model.to_train()
-
-    count_pruned = prune(model, 0.1, loader, sdn_loss, count_pruned, device)
-
-    for epoch in range(1, epochs + 1):
-        epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
-
-        if epoch in epoch_growth:
-            grown_layers = model.grow()
-
-            model.to(device)
-            optimizer.add_param_group({'params': grown_layers})
-            print("model grow")
-            print("layers: {}".format(model.layers))
-
-            count_pruned = prune(model, 0.1, loader, sdn_loss, count_pruned, device)
 
     return metrics
 
@@ -658,3 +643,8 @@ def epoch_routine(model, datas, optimizer, scheduler, epoch, epochs, augment, me
 def calc_coeff(model):
     return [0.01 + (1 / model.num_output) * (i + 1) for i in range(model.num_output - 1)]
 # max tau: % of the network for the IC -> if 3 outputs: 0.33, 0.66, 1
+
+def prune(model, keep_ratio, loader, loss, count_pruned, device):
+    masks, cur_pruned = snip.snip_skip_layers(model, keep_ratio, loader, loss, device)
+    snip.apply_prune_mask_skip_layers(model, masks, count_pruned)
+    return cur_pruned

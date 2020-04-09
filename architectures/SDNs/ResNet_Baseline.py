@@ -8,25 +8,8 @@ import model_funcs as mf
 class ResNet_Baseline(nn.Module):
     def __init__(self, params):
         super(ResNet_Baseline, self).__init__()
-        """ Create the baseline ResNet for the iterative training
-        Is concentrated on cifar10 dataset
-        :param params: {    'network_type': 'resnet_iterative',
-                            'augment_training': True,
-                            'init_weights': True,
-                            'block_type': 'basic',
-                            'weight_decay': 0.0001,
-                            'learning_rate': 0.1,
-                            'epochs': 100,
-                            'milestones': [35, 60, 85],
-                            'gammas': [0.1, 0.1, 0.1],
-                            'init_type': 'iterative',
-                            'size': 9,
-                            'ics': [0,1,0,1,0,1,0,1,0]
-                        }
-        :type params:
-        """
-        self.ic_only = False
 
+        self.ic_only = False
         self.augment_training = params['augment_training']
         self.init_weights = params['init_weights']
         self.block_type = params['block_type']
@@ -34,6 +17,9 @@ class ResNet_Baseline(nn.Module):
         self.total_size = params['size']  # the size to reach (number of units)
         self.ics = params['ics'] if 'ics' in params else []
         self.num_ics = sum(self.ics)
+        self.prune = params['prune']
+        if self.prune:
+            self.keep_ratio = params["keep_ratio"]
 
         if 'mode' in params:
             self.mode = params['mode']
