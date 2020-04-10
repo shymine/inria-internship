@@ -532,5 +532,5 @@ def format_outputs(outputs):
 def print_acc(arr):
     str = "accuracies:\n"
     for i in arr:
-        str += "{}: {}, ".format(i[1]['name'], i[1]['test_top1_acc'][-1])
+        str += "{}: {}, \n".format(i[1]['name'], i[1]['test_top1_acc'][-1])
     print(str)

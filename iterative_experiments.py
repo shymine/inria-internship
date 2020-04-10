@@ -73,22 +73,43 @@ def main(mode):
         ('iterative', '0', (True, 0.2)),
         ('iterative', '0', (True, 0.1)),
         ('iterative', '0', (True, 0.05)),
+
+        ('iterative', '1', (False, None)),
+        ('iterative', '1', (True, 0.8)),
+        ('iterative', '1', (True, 0.6)),
+        ('iterative', '1', (True, 0.5)),
+        ('iterative', '1', (True, 0.4)),
+        ('iterative', '1', (True, 0.3)),
+        ('iterative', '1', (True, 0.2)),
+        ('iterative', '1', (True, 0.1)),
+        ('iterative', '1', (True, 0.05)),
+
+        ('iterative', '2', (False, None)),
+        ('iterative', '2', (True, 0.8)),
+        ('iterative', '2', (True, 0.6)),
+        ('iterative', '2', (True, 0.5)),
+        ('iterative', '2', (True, 0.4)),
+        ('iterative', '2', (True, 0.3)),
+        ('iterative', '2', (True, 0.2)),
+        ('iterative', '2', (True, 0.1)),
+        ('iterative', '2', (True, 0.05)),
+
+        ('full', None, (False, None)),
+        ('full_ic', None, (False, None))
     ]
     create_bool = [
-        0, 0, 1,
-        0, 0, 0,
-        0, 0, 0
+        1 for _ in range(29)
     ]
 
     arr = multi_experiments(models_path, zip(create_params, create_bool), device)
     af.print_acc(arr)
-    print("parameters")
-    print("arr: {}".format(arr))
-    for m in arr:
-        print("m[0]: {}".format(m[0]))
-        params = m[0].parameters(True)
-        for p in params:
-            print("{}\n".format(p))
+    # print("parameters")
+    # print("arr: {}".format(arr))
+    # for m in arr:
+    #     print("m[0]: {}".format(m[0]))
+    #     params = m[0].parameters(True)
+    #     for p in params:
+    #         print("{}\n".format(p))
 
 
 if __name__ == '__main__':
