@@ -75,13 +75,16 @@ def main(mode):
         ('iterative', '0', (True, 0.05)),
     ]
     create_bool = [
-        1, 1, 1,
-        1, 1, 1,
-        1, 1, 1
+        0, 0, 1,
+        0, 0, 0,
+        0, 0, 0
     ]
 
     arr = multi_experiments(models_path, zip(create_params, create_bool), device)
     af.print_acc(arr)
+    print("parameters")
+    for p in arr[0][0].parameters():
+        print(p)
 
 
 if __name__ == '__main__':
