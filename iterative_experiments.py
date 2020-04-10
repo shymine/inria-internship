@@ -83,7 +83,9 @@ def main(mode):
     arr = multi_experiments(models_path, zip(create_params, create_bool), device)
     af.print_acc(arr)
     print("parameters")
+    print("arr: {}".format(arr))
     for m in arr:
+        print("m[0]: {}".format(m[0]))
         params = m[0].parameters(True)
         for p in params:
             print("{}\n".format(p))
