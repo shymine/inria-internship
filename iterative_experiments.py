@@ -78,18 +78,18 @@ def main(mode):
         ('full_ic', None, (False, None))
     ]
     create_bool = [
-        1 for _ in range(len(create_params))
+        1 if i == 0 else 0 for i in range(len(create_params))
     ]
 
     arr = multi_experiments(models_path, zip(create_params, create_bool), device)
     af.print_acc(arr)
-    # print("parameters")
-    # print("arr: {}".format(arr))
-    # for m in arr:
-    #     print("m[0]: {}".format(m[0]))
-    #     params = m[0].parameters(True)
-    #     for p in params:
-    #         print("{}\n".format(p))
+    print("parameters")
+    print("arr: {}".format([i for i in arr]))
+    for m in arr:
+        print("m[0]: {}".format(m[0]))
+        params = m[0].parameters(True)
+        for p in params:
+            print("{}\n".format(p))
 
 
 if __name__ == '__main__':
