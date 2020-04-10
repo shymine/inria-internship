@@ -83,8 +83,10 @@ def main(mode):
     arr = multi_experiments(models_path, zip(create_params, create_bool), device)
     af.print_acc(arr)
     print("parameters")
-    for p in arr[0][0].parameters():
-        print(p)
+    for m in arr:
+        params = m[0].parameters(True)
+        for p in params:
+            print("{}\n".format(p))
 
 
 if __name__ == '__main__':

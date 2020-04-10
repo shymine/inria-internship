@@ -1,0 +1,9 @@
+cifar10_resnet_iterative_iterative_0:            [76.36, 78.90, 77.72, 76.09], 
+cifar10_resnet_iterative_iterative_0_prune_80.0: [75.90, 77.43, 77.61, 75.77], 
+cifar10_resnet_iterative_iterative_0_prune_60.0: [76.13, 76.47, 75.61, 73.84], 
+cifar10_resnet_iterative_iterative_0_prune_50.0: [74.86, 77.45, 76.86, 74.04], 
+cifar10_resnet_iterative_iterative_0_prune_40.0: [70.93, 71.59, 70.14, 67.90], 
+cifar10_resnet_iterative_iterative_0_prune_30.0: [68.93, 68.29, 68.09, 65.20], 
+cifar10_resnet_iterative_iterative_0_prune_20.0: [65.56, 63.96, 64.89, 41.03], 
+cifar10_resnet_iterative_iterative_0_prune_10.0: [53.89, 54.59, 49.36, 21.97], 
+cifar10_resnet_iterative_iterative_0_prune_5.0:  [41.46, 34.23, 17.10, 10.00]

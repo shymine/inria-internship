@@ -6,6 +6,8 @@ outputs/
 
 __pycache__/
 
+venv/
+
 .idea
 
 ## the experiments are not needed
