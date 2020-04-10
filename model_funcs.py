@@ -439,7 +439,7 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
     model.to_train()
 
     if model.prune:
-        loader = get_loader(data, augment)
+        loader = get_loader(data, False)
         count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, 0, device)
 
     for epoch in range(1, epochs + 1):
@@ -451,7 +451,7 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
             optimizer.add_param_group({'params': grown_layers})
             print("model grow")
             if model.prune:
-                loader = get_loader(data, augment)
+                loader = get_loader(data, False)
                 count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
     return metrics
 
@@ -481,7 +481,7 @@ def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
     print("max_epoch: {}".format(max_epoch))
 
     if model.prune:
-        loader = get_loader(data, augment)
+        loader = get_loader(data, False)
         count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, 0, device)
 
     for epoch in range(max_epoch):
@@ -494,7 +494,7 @@ def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
             print("model grow")
             print("layers: {}".format(model.layers))
             if model.prune:
-                loader = get_loader(data, augment)
+                loader = get_loader(data, False)
                 count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
 
         if epoch in freeze_epochs:
@@ -558,7 +558,7 @@ def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
     model.to_train()
 
     if model.prune:
-        loader = get_loader(data, augment)
+        loader = get_loader(data, False)
         count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, 0, device)
 
     for epoch in range(epochs):
@@ -573,7 +573,7 @@ def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
             optimizer.add_param_group({'params': grown_layers})
             print("model grow")
             if model.prune:
-                loader = get_loader(data, augment)
+                loader = get_loader(data, False)
                 count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
 
         if epoch in unfreeze_epochs:
@@ -583,23 +583,23 @@ def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
     return metrics
 
 
-def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
-    print("iter training 3")
-    augment = model.augment_training
-    metrics = {
-        'epoch_times': [],
-        'test_top1_acc': [],
-        'test_top3_acc': [],
-        'train_top1_acc': [],
-        'train_top3_acc': [],
-        'lrs': []
-    }
-
-    return metrics
-
-
-def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
-    return {}
+# def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
+#     print("iter training 3")
+#     augment = model.augment_training
+#     metrics = {
+#         'epoch_times': [],
+#         'test_top1_acc': [],
+#         'test_top3_acc': [],
+#         'train_top1_acc': [],
+#         'train_top3_acc': [],
+#         'lrs': []
+#     }
+#
+#     return metrics
+#
+#
+# def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
+#     return {}
 
 
 def epoch_routine(model, datas, optimizer, scheduler, epoch, epochs, augment, metrics, device):
