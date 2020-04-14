@@ -56,9 +56,9 @@ def main(mode):
         ('iterative', '0', (False, None)),
         ('iterative', '1', (False, None)),
         ('iterative', '2', (False, None)),
-        ('iterative', '0', (True, 0.5)),
-        ('iterative', '1', (True, 0.5)),
-        ('iterative', '2', (True, 0.5)),
+        # ('iterative', '0', (True, 0.5)),
+        # ('iterative', '1', (True, 0.5)),
+        # ('iterative', '2', (True, 0.5)),
 
         ('full', None, (False, None)),
         ('full_ic', None, (False, None))
