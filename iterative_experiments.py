@@ -52,36 +52,37 @@ def main(mode):
     random_seed = af.get_random_seed()
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
-    # create_params = [
-    #     ('iterative', '0', (False, None)),
-    #     ('iterative', '1', (False, None)),
-    #     ('iterative', '2', (False, None)),
-    #     # ('iterative', '0', (True, 0.5)),
-    #     # ('iterative', '1', (True, 0.5)),
-    #     # ('iterative', '2', (True, 0.5)),
-    #
-    #     ('full', None, (False, None)),
-    #     ('full_ic', None, (False, None))
-    # ]
     create_params = [
         ('iterative', '0', (False, None)),
-        ('iterative', '0', (True, 0.8)),
-        ('iterative', '0', (True, 0.6)),
-        ('iterative', '0', (True, 0.5)),
-        ('iterative', '0', (True, 0.4)),
-        ('iterative', '0', (True, 0.3)),
-        ('iterative', '0', (True, 0.2)),
-        ('iterative', '0', (True, 0.1)),
-        ('iterative', '0', (True, 0.05)),
+        ('iterative', '1', (False, None)),
+        ('iterative', '2', (False, None)),
+        ('iterative', '3', (False, None)),
+        # ('iterative', '0', (True, 0.5)),
+        # ('iterative', '1', (True, 0.5)),
+        # ('iterative', '2', (True, 0.5)),
 
         ('full', None, (False, None)),
         ('full_ic', None, (False, None))
     ]
+    # create_params = [
+    #     ('iterative', '0', (False, None)),
+    #     ('iterative', '0', (True, 0.8)),
+    #     ('iterative', '0', (True, 0.6)),
+    #     ('iterative', '0', (True, 0.5)),
+    #     ('iterative', '0', (True, 0.4)),
+    #     ('iterative', '0', (True, 0.3)),
+    #     ('iterative', '0', (True, 0.2)),
+    #     ('iterative', '0', (True, 0.1)),
+    #     ('iterative', '0', (True, 0.05)),
+    #
+    #     ('full', None, (False, None)),
+    #     ('full_ic', None, (False, None))
+    # ]
     create_bool = [
         1 if True else 0 for i in range(len(create_params))
     ]
 
-    arr = multi_experiments(models_path, zip(create_params, create_bool), device)
+    arr = list(multi_experiments(models_path, zip(create_params, create_bool), device))
     af.print_acc(arr)
     print("parameters")
     print("arr: {}".format([i for i in arr]))

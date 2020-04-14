@@ -58,8 +58,8 @@ class ResNet_Baseline(nn.Module):
         train_funcs = {
             '0': mf.iter_training_0,
             '1': mf.iter_training_1,
-            '2': mf.iter_training_2#,
-            # '3': mf.iter_training_3,
+            '2': mf.iter_training_2,
+            '3': mf.iter_training_3,
             # '4': mf.iter_training_4
         }
 
