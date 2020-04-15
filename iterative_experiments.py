@@ -13,13 +13,15 @@ Tests to do:
 """
 
 
-def train_model(models_path, params, device):
-    type, mode, pruning = params
+def train_model(models_path, cr_params, device):
+    type, mode, pruning = cr_params
     model, params = arcs.create_resnet_iterative(models_path, type, mode, pruning, False)
     dataset = af.get_dataset('cifar10')
     params['name'] = params['base_model'] + '_{}_{}'.format(type, mode)
     if model.prune:
         params['name'] += "_prune_{}".format(model.keep_ratio*100)
+    if mode == "0":
+        params['epochs'] = 200
     opti_param = (params['learning_rate']/10, params['weight_decay'], params['momentum'], -1)
     lr_schedule_params = (params['milestones'], params['gammas'])
 
@@ -79,18 +81,18 @@ def main(mode):
     #     ('full_ic', None, (False, None))
     # ]
     create_bool = [
-        1 if True else 0 for i in range(len(create_params))
+        1 if i==3 or i==0 else 0 for i in range(len(create_params))
     ]
 
     arr = list(multi_experiments(models_path, zip(create_params, create_bool), device))
     af.print_acc(arr)
-    print("parameters")
-    print("arr: {}".format([i for i in arr]))
-    for m in arr:
-        print("m[0]: {}".format(m[0]))
-        params = m[0].parameters(True)
-        for p in params:
-            print("{}\n".format(p))
+    # print("parameters")
+    # print("arr: {}".format([i for i in arr]))
+    # for m in arr[:0]:
+    #     print("m[0]: {}".format(m[0]))
+    #     params = m[0].parameters(True)
+    #     for p in params:
+    #         print("{}\n".format(p))
 
 
 if __name__ == '__main__':
