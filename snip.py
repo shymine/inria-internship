@@ -122,7 +122,7 @@ def snip_skip_layers(model, keep_ratio, loader, loss, device='cpu'):
         keep_masks.append(((g / norm_factor) >= acceptable_score).float())
 
 
-    return (keep_masks, count_pruned)
+    return (keep_masks, count_pruned-1)
 
 
 def apply_prune_mask_skip_layers(model, masks, count_pruned):

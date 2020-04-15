@@ -594,7 +594,7 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
         'train_top3_acc': [],
         'lrs': []
     }
-    increase_value = epochs/(model.model.num_ics + 1)
+    increase_value = epochs/(model.num_ics + 1)
     print("increase value: {}".format(increase_value))
     epoch_growth = [(i+1)*increase_value for i in range(model.num_ics+1)]
     print("epoch increasing: {}".format(epoch_growth))
