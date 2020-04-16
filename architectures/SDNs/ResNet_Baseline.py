@@ -60,7 +60,7 @@ class ResNet_Baseline(nn.Module):
             '1': mf.iter_training_1,
             '2': mf.iter_training_2,
             '3': mf.iter_training_3,
-            # '4': mf.iter_training_4
+            '4': mf.iter_training_4
         }
 
         if self.init_type == "full":

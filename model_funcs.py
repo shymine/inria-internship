@@ -643,8 +643,39 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
     return metrics
 
 
-# def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
-#     return {}
+def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
+    print("iter training 4")
+    augment = model.augment_training
+    losses = []
+    metrics = {
+        'epoch_times': [],
+        'test_top1_acc': [],
+        'test_top3_acc': [],
+        'train_top1_acc': [],
+        'train_top3_acc': [],
+        'lrs': []
+    }
+    #def grow(model, previous_loss, new_loss):
+
+    model.to(device)
+    model.to_train()
+    last_loss = None
+    for epoch in range(epochs):
+        new_loss = epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
+        loss_diff = 10
+        if last_loss is not None:
+            loss_diff = new_loss - last_loss
+            print("loss diff: {}".format(loss_diff))
+        last_loss = new_loss
+
+        if loss_diff < 0.001:
+            print("num_output, ic_num: {}, {}".format(model.num_output, model.num_ics))
+            if model.num_output == model.num_ics+1:
+                break
+            model.grow()
+            print("model grow: {}".format(model.num_output))
+
+    return metrics
 
 
 def epoch_routine(model, datas, optimizer, scheduler, epoch, epochs, augment, metrics, device):
@@ -660,8 +691,10 @@ def epoch_routine(model, datas, optimizer, scheduler, epoch, epochs, augment, me
     start_time = time.time()
     model.train()
     loader = get_loader(datas, augment)
+    losses = []
     for i, batch in enumerate(loader):
         total_loss = sdn_training_step(optimizer, model, cur_coeffs, batch, device)
+        losses.append(total_loss)
         if i % 100 == 0:
             print("Loss: {}".format(total_loss))
 
@@ -683,6 +716,10 @@ def epoch_routine(model, datas, optimizer, scheduler, epoch, epochs, augment, me
     metrics['train_top3_acc'].append(top3_train)
     metrics['epoch_times'].append(epoch_time)
     metrics['lrs'].append(cur_lr)
+
+    loss_moy = sum(losses)/len(losses)
+    print("mean loss: {}".format(loss_moy))
+    return loss_moy
 
 
 def calc_coeff(model):

@@ -59,6 +59,7 @@ def main(mode):
         ('iterative', '1', (False, None)),
         ('iterative', '2', (False, None)),
         ('iterative', '3', (False, None)),
+        ('iterative', '4', (False, None)),
         # ('iterative', '0', (True, 0.5)),
         # ('iterative', '1', (True, 0.5)),
         # ('iterative', '2', (True, 0.5)),
@@ -81,7 +82,8 @@ def main(mode):
     #     ('full_ic', None, (False, None))
     # ]
     create_bool = [
-        1 if i==3 or i==0 else 0 for i in range(len(create_params))
+        1 if i==4 or i==0
+        else 0 for i in range(len(create_params))
     ]
 
     arr = list(multi_experiments(models_path, zip(create_params, create_bool), device))
