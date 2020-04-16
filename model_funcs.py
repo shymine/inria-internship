@@ -672,7 +672,9 @@ def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
             print("num_output, ic_num: {}, {}".format(model.num_output, model.num_ics))
             if model.num_output == model.num_ics+1:
                 break
-            model.grow()
+            grown_layers = model.grow()
+            model.to(device)
+            optimizer.add_param_group({'params': grown_layers})
             print("model grow: {}".format(model.num_output))
 
     return metrics
