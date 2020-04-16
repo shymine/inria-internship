@@ -626,8 +626,8 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
         epoch_routine(model, data, optimizer, scheduler, epoch, int(epoch_growth[-1]), augment, metrics, device)
 
         if epoch in epoch_growth[:-1]:
-            for params in model.parameters(True):
-                params.require_grad = False
+            # for params in model.parameters(True):
+            #     params.require_grad = False
             grown_layers = model.grow()
             model.to(device)
             optimizer.add_param_group({'params': grown_layers})
@@ -636,9 +636,9 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
                 loader = get_loader(data, False)
                 count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
 
-        if epoch in unfreeze_epochs:
-            for params in model.parameters(True):
-                params.require_grad = True
+        # if epoch in unfreeze_epochs:
+        #     for params in model.parameters(True):
+        #         params.require_grad = True
 
     return metrics
 
