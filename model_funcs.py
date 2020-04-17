@@ -455,7 +455,7 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
                 loader = get_loader(data, False)
                 count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
 
-        if model.num_output == sum(model.num_ics + 1):
+        if model.num_output == model.num_ics + 1:
             if best_model is None:
                 best_model, accuracies = copy.deepcopy(model), metrics['test_top1_acc'][-1]
                 print("Begin best_model: {}".format(accuracies))
@@ -590,7 +590,7 @@ def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
 
     return metrics
 
-
+# same as 2 but with more and more epochs between the growings
 def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
     print("iter training 3")
     augment = model.augment_training
@@ -650,7 +650,7 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
 
     return metrics
 
-
+# grow when loss stagnate
 def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
     print("iter training 4")
     augment = model.augment_training
