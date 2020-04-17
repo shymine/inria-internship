@@ -455,7 +455,7 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
                 loader = get_loader(data, False)
                 count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
 
-        if model.num_outputs == sum(model.num_ics + 1):
+        if model.num_output == sum(model.num_ics + 1):
             if best_model is None:
                 best_model, accuracies = copy.deepcopy(model), metrics['test_top1_acc'][-1]
                 print("Begin best_model: {}".format(accuracies))
