@@ -73,7 +73,7 @@ def main(mode):
     #     ('full_ic', None, (False, None))
     # ]
     create_bool = [
-        1 if i==0
+        1 if i==0 or i==4 or i==3
         else 0 for i in range(len(create_params))
     ]
 

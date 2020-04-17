@@ -607,7 +607,7 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
     epoch_growth = [(i+1)*increase_value for i in range(model.num_ics+1)]
     print("epoch increasing: {}".format(epoch_growth))
     tmp = [0] + epoch_growth
-    epoch_growth = [sum(tmp[:i+2]) for i in range(len(tmp)-1)]
+    epoch_growth = [25, 50, 100, 200] #[sum(tmp[:i+2]) for i in range(len(tmp)-1)]
     print("epoch growth: {}".format(epoch_growth))
 
     def calc_inter_growth(array):
@@ -619,7 +619,7 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
                 res.append(int((last + i) / 2))
             last = i
         return res
-    unfreeze_epochs = calc_inter_growth(epoch_growth)
+    unfreeze_epochs = [33, 75, 125] #calc_inter_growth(epoch_growth)
     print("unfreeze_epochs: {}".format(unfreeze_epochs))
     max_coeffs = calc_coeff(model)
 
@@ -634,8 +634,8 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
         epoch_routine(model, data, optimizer, scheduler, epoch, int(epoch_growth[-1]), augment, metrics, device)
 
         if epoch in epoch_growth[:-1]:
-            # for params in model.parameters(True):
-            #     params.require_grad = False
+            for params in model.parameters(True):
+                params.require_grad = False
             grown_layers = model.grow()
             model.to(device)
             optimizer.add_param_group({'params': grown_layers})
@@ -644,9 +644,9 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
                 loader = get_loader(data, False)
                 count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
 
-        # if epoch in unfreeze_epochs:
-        #     for params in model.parameters(True):
-        #         params.require_grad = True
+        if epoch in unfreeze_epochs:
+            for params in model.parameters(True):
+                params.require_grad = True
 
     return metrics
 
@@ -676,7 +676,7 @@ def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
             print("loss diff: {}".format(loss_diff))
         last_loss = new_loss
 
-        if loss_diff < 0.001:
+        if abs(loss_diff) < 0.001:
             print("num_output, ic_num: {}, {}".format(model.num_output, model.num_ics))
             if model.num_output == model.num_ics+1:
                 break
