@@ -4,15 +4,6 @@ import sys
 import aux_funcs as af
 import network_architectures as arcs
 
-"""
-Tests to do:
-- train every layer for 100 epochs
-- train for 100 epochs after a new layer is added and freeze the previous layers
-- train for 50 epochs between growth and freeze the previous layers, 100 epochs of full training
-- grow every 50, freeze the 25 first and learn the 25 others for beneath layers
-"""
-
-
 def train_model(models_path, cr_params, device):
     type, mode, pruning = cr_params
     model, params = arcs.create_resnet_iterative(models_path, type, mode, pruning, False)
@@ -82,7 +73,7 @@ def main(mode):
     #     ('full_ic', None, (False, None))
     # ]
     create_bool = [
-        1 if i==0 or i==3 or i==4
+        1 if i==0
         else 0 for i in range(len(create_params))
     ]
 

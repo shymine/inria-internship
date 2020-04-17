@@ -1,7 +1,7 @@
 # model_funcs.py
 # implements the functions for training, testing SDNs and CNNs
 # also implements the functions for computing confusion and confidence
-
+import copy
 import time
 
 import numpy as np
@@ -429,7 +429,7 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
         'train_top3_acc': [],
         'lrs': []
     }
-    epoch_growth = [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
+    epoch_growth = [25,50,75] #[(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
     print("array params: num_ics {}, epochs {}".format(model.num_ics, epochs))
     print("epochs growth: {}".format(epoch_growth))
 
@@ -442,6 +442,7 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
         loader = get_loader(data, False)
         count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, 0, device)
 
+    best_model, accuracies = None, None
     for epoch in range(1, epochs + 1):
         epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
 
@@ -453,6 +454,13 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
             if model.prune:
                 loader = get_loader(data, False)
                 count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
+
+        if model.num_outputs == sum(model.num_ics + 1):
+            if best_model is None:
+                best_model, accuracies = copy.deepcopy(model), metrics['test_top1_acc'][-1]
+                print("Begin best_model: {}".format(accuracies))
+            elif sum(metrics['test_top1_acc'][-1])>sum(accuracies):
+                best_model, accuracies = copy.deepcopy(model), metrics['test_top1_acc'][-1]
     return metrics
 
 
