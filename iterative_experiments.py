@@ -44,7 +44,7 @@ def _link_metrics(params, metrics):
     params['lrs'] = metrics['lrs']
 
 
-def main(mode):
+def main(mode, load):
     random_seed = af.get_random_seed()
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
@@ -79,8 +79,11 @@ def main(mode):
         1 if i == 0
         else 0 for i in range(len(create_params))
     ]
-
-    arr = list(multi_experiments(models_path, zip(create_params, create_bool), device))
+    if load is not None:
+        model, param = arcs.load_model(models_path, load, -1)
+        arr = [(model, param)]
+    else:
+        arr = list(multi_experiments(models_path, zip(create_params, create_bool), device))
     af.print_acc(arr)
     # print("parameters")
     # print("arr: {}".format([i for i in arr]))
@@ -93,13 +96,16 @@ def main(mode):
 
 if __name__ == '__main__':
     try:
-        optlist, args = getopt.getopt(sys.argv[1:], 'm:')
+        optlist, args = getopt.getopt(sys.argv[1:], 'm:l:')
     except getopt.GetoptError as err:
         print(err)
         sys.exit(2)
     mode = 0
+    load = None
     for opt, arg in optlist:
         if opt == "-m":
             mode = arg
+        if opt == "-l":
+            load = arg
 
-    main(mode)
+    main(mode, load)
