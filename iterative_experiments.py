@@ -89,34 +89,6 @@ def main(mode):
     #     params = m[0].parameters(True)
     #     for p in params:
     #         print("{}\n".format(p))
-    # fig, axs = plt.subplots(len(arr))
-    #
-    # print("params: {}".format(arr[0][1]))
-    # for i, m in enumerate(arr):
-    #     ax = axs[i]
-    #     ax.set_xlabel('epochs')
-    #     ax.set_ylabels('accuracy')
-    #     ax.plot([i for i in range(len(m[1]['test_top1_acc']))], #TODO: transfor so that it only print the acc of i(th) classifier
-    #             [],
-    #             label="IC 1")
-
-def _transform(test_acc):
-    max_len = len(test_acc[-1])
-    print("max_len: {}".format(max_len))
-    tmp = []
-    for i in test_acc:
-        if len(i) < max_len :
-            a = [i[ind] if ind <= len(i) else 0 for ind in range(max_len)]
-        else:
-            a = copy.deepcopy(i)
-        tmp.append(a)
-    print("res1: {}".format(tmp))
-    res = [[] for _ in tmp[0]]
-    for i in tmp:
-        for id, j in enumerate(i):
-            res[id].append(i)
-    print("res: {}".format(res))
-    return res
 
 
 if __name__ == '__main__':

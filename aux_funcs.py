@@ -9,6 +9,7 @@ import os.path
 import pickle
 import random
 import sys
+import time
 
 import matplotlib
 import numpy as np
@@ -534,3 +535,46 @@ def print_acc(arr):
     for i in arr:
         str += "{}: {}, \n".format(i[1]['name'], i[1]['test_top1_acc'][-1])
     print(str)
+
+def plot_acc(arr): # arr is the array of metrics
+    fig, axs = plt.subplots(len(arr),1)
+
+    def _transform(test_acc):
+        max_len = len(test_acc[-1])
+        print("max_len: {}".format(max_len))
+        tmp = []
+        for i in test_acc:
+            if len(i) < max_len:
+                a = [i[ind] if ind < len(i) else 0 for ind in range(max_len)]
+            else:
+                a = copy.deepcopy(i)
+            tmp.append(a)
+        print("res1: {}".format(tmp))
+        res = [[] for _ in tmp[0]]
+        for i in tmp:
+            for id, j in enumerate(i):
+                res[id].append(j)
+        print("res: {}".format(res))
+        return res
+
+    for i, m in enumerate(arr):
+        ax = axs[i]
+        acc = m['test_top1_acc']
+        tr = _transform(acc)
+        ax.set_xlabel('epochs')
+        ax.set_ylabel('accuracy')
+        ax.plot([i for i in range(len(acc))],
+                tr[0],
+                label="IC 1")
+        ax.plot([i for i in range(len(acc))],
+                tr[1],
+                label="IC 2")
+        ax.plot([i for i in range(len(acc))],
+                tr[2],
+                label="IC 3")
+        ax.plot([i for i in range(len(acc))],
+                tr[3],
+                label="final output")
+    name = time.asctime(time.localtime(time.time())).replace(" ", "_")
+
+    fig.savefig("{}.pdf".format(name))
