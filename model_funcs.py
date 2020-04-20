@@ -429,7 +429,7 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
         'train_top3_acc': [],
         'lrs': []
     }
-    epoch_growth = [25,50,75] #[(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
+    epoch_growth = [25, 50, 75]  # [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
     print("array params: num_ics {}, epochs {}".format(model.num_ics, epochs))
     print("epochs growth: {}".format(epoch_growth))
 
@@ -459,7 +459,7 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
             if best_model is None:
                 best_model, accuracies = copy.deepcopy(model), metrics['test_top1_acc'][-1]
                 print("Begin best_model: {}".format(accuracies))
-            elif sum(metrics['test_top1_acc'][-1])>sum(accuracies):
+            elif sum(metrics['test_top1_acc'][-1]) > sum(accuracies):
                 best_model, accuracies = copy.deepcopy(model), metrics['test_top1_acc'][-1]
     return metrics
 
@@ -468,14 +468,7 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
 def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
     print("iter training 1")
     augment = model.augment_training
-    metrics = {
-        'epoch_times': [],
-        'test_top1_acc': [],
-        'test_top3_acc': [],
-        'train_top1_acc': [],
-        'train_top3_acc': [],
-        'lrs': []
-    }
+    metrics = dict(epoch_times=[], test_top1_acc=[], test_top3_acc=[], train_top1_acc=[], train_top3_acc=[], lrs=[])
     epoch_growth = [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
     print("epoch growth: {}".format(epoch_growth))
     freeze_epochs = (np.array([0, 25, 50]) + epochs).tolist()
@@ -590,6 +583,7 @@ def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
 
     return metrics
 
+
 # same as 2 but with more and more epochs between the growings
 def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
     print("iter training 3")
@@ -602,12 +596,12 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
         'train_top3_acc': [],
         'lrs': []
     }
-    increase_value = epochs/(model.num_ics + 1)
+    increase_value = epochs / (model.num_ics + 1)
     print("increase value: {}".format(increase_value))
-    epoch_growth = [(i+1)*increase_value for i in range(model.num_ics+1)]
+    epoch_growth = [(i + 1) * increase_value for i in range(model.num_ics + 1)]
     print("epoch increasing: {}".format(epoch_growth))
     tmp = [0] + epoch_growth
-    epoch_growth = [25, 50, 100, 200] #[sum(tmp[:i+2]) for i in range(len(tmp)-1)]
+    epoch_growth = [25, 50, 100, 200]  # [sum(tmp[:i+2]) for i in range(len(tmp)-1)]
     print("epoch growth: {}".format(epoch_growth))
 
     def calc_inter_growth(array):
@@ -619,9 +613,10 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
                 res.append(int((last + i) / 2))
             last = i
         return res
-    unfreeze_epochs = [33, 75, 125] #calc_inter_growth(epoch_growth)
+
+    unfreeze_epochs = [33, 75, 125]  # calc_inter_growth(epoch_growth)
     print("unfreeze_epochs: {}".format(unfreeze_epochs))
-    max_coeffs = calc_coeff(model)
+    # max_coeffs = calc_coeff(model)
 
     model.to(device)
     model.to_train()
@@ -650,6 +645,7 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
 
     return metrics
 
+
 # grow when loss stagnate
 def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
     print("iter training 4")
@@ -663,7 +659,7 @@ def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
         'train_top3_acc': [],
         'lrs': []
     }
-    #def grow(model, previous_loss, new_loss):
+    # def grow(model, previous_loss, new_loss):
 
     model.to(device)
     model.to_train()
@@ -678,7 +674,7 @@ def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
 
         if abs(loss_diff) < 0.001:
             print("num_output, ic_num: {}, {}".format(model.num_output, model.num_ics))
-            if model.num_output == model.num_ics+1:
+            if model.num_output == model.num_ics + 1:
                 break
             grown_layers = model.grow()
             model.to(device)
@@ -727,13 +723,15 @@ def epoch_routine(model, datas, optimizer, scheduler, epoch, epochs, augment, me
     metrics['epoch_times'].append(epoch_time)
     metrics['lrs'].append(cur_lr)
 
-    loss_moy = sum(losses)/len(losses)
+    loss_moy = sum(losses) / len(losses)
     print("mean loss: {}".format(loss_moy))
     return loss_moy
 
 
 def calc_coeff(model):
     return [0.01 + (1 / model.num_output) * (i + 1) for i in range(model.num_output - 1)]
+
+
 # max tau: % of the network for the IC -> if 3 outputs: 0.33, 0.66, 1
 
 def prune(model, keep_ratio, loader, loss, count_pruned, device):

@@ -1,8 +1,11 @@
+import copy
 import getopt
 import sys
+import matplotlib.pyplot as plt
 
 import aux_funcs as af
 import network_architectures as arcs
+
 
 def train_model(models_path, cr_params, device):
     type, mode, pruning = cr_params
@@ -10,10 +13,10 @@ def train_model(models_path, cr_params, device):
     dataset = af.get_dataset('cifar10')
     params['name'] = params['base_model'] + '_{}_{}'.format(type, mode)
     if model.prune:
-        params['name'] += "_prune_{}".format(model.keep_ratio*100)
+        params['name'] += "_prune_{}".format(model.keep_ratio * 100)
     if mode == "0":
         params['epochs'] = 200
-    opti_param = (params['learning_rate']/10, params['weight_decay'], params['momentum'], -1)
+    opti_param = (params['learning_rate'], params['weight_decay'], params['momentum'], -1)
     lr_schedule_params = (params['milestones'], params['gammas'])
 
     model.to(device)
@@ -73,7 +76,7 @@ def main(mode):
     #     ('full_ic', None, (False, None))
     # ]
     create_bool = [
-        1 if i==0 or i==4 or i==3
+        1 if i == 0
         else 0 for i in range(len(create_params))
     ]
 
@@ -86,6 +89,34 @@ def main(mode):
     #     params = m[0].parameters(True)
     #     for p in params:
     #         print("{}\n".format(p))
+    # fig, axs = plt.subplots(len(arr))
+    #
+    # print("params: {}".format(arr[0][1]))
+    # for i, m in enumerate(arr):
+    #     ax = axs[i]
+    #     ax.set_xlabel('epochs')
+    #     ax.set_ylabels('accuracy')
+    #     ax.plot([i for i in range(len(m[1]['test_top1_acc']))], #TODO: transfor so that it only print the acc of i(th) classifier
+    #             [],
+    #             label="IC 1")
+
+def _transform(test_acc):
+    max_len = len(test_acc[-1])
+    print("max_len: {}".format(max_len))
+    tmp = []
+    for i in test_acc:
+        if len(i) < max_len :
+            a = [i[ind] if ind <= len(i) else 0 for ind in range(max_len)]
+        else:
+            a = copy.deepcopy(i)
+        tmp.append(a)
+    print("res1: {}".format(tmp))
+    res = [[] for _ in tmp[0]]
+    for i in tmp:
+        for id, j in enumerate(i):
+            res[id].append(i)
+    print("res: {}".format(res))
+    return res
 
 
 if __name__ == '__main__':
