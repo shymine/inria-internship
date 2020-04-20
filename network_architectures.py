@@ -311,6 +311,9 @@ def load_model(models_path, model_name, epoch=0):
         elif 'mobilenet' in network_type:
             model = MobileNet(model_params)
 
+    elif 'iterative' in model_name:
+        model = ResNet_Baseline(model_params)
+
     network_path = models_path + '/' + model_name
 
     if epoch == 0:  # untrained model
