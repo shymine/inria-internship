@@ -537,6 +537,7 @@ def print_acc(arr):
     print(str)
 
 def plot_acc(arr): # arr is the array of metrics
+    print("arr_l: {}".format(len(arr)))
     fig, axs = plt.subplots(len(arr),1)
 
     def _transform(test_acc):
