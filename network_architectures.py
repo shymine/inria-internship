@@ -136,6 +136,7 @@ def create_wideresnet32_4(models_path, task, save_type, get_params=False):
 
 def create_mobilenet(models_path, task, save_type, get_params=False):
     print('Creating MobileNet untrained {} models...'.format(task))
+
     model_params = get_task_params(task)
     model_name = '{}_mobilenet'.format(task)
 
@@ -161,7 +162,18 @@ def create_resnet_iterative(models_path, type="full", mode=None, prune=(False, 0
     model_params['augment_training'] = True
     model_params['init_weights'] = True
     model_params['block_type'] = 'basic'
-    get_lr_params(model_params)
+
+    model_params['momentum'] = 0.9
+
+    network_type = model_params['network_type']
+
+    model_params['weight_decay'] = 0.0001
+
+    model_params['learning_rate'] = 0.01
+    model_params['epochs'] = 100
+    model_params['milestones'] = [35, 60, 85]
+    model_params['gammas'] = [0.1, 0.1, 0.1]
+
     model_params['base_model'] = model_name
     model_params['init_type'] = type
     if mode:
