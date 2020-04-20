@@ -538,7 +538,6 @@ def print_acc(arr):
 
 def plot_acc(arr): # arr is the array of metrics
     fig, axs = plt.subplots(len(arr),1)
-    print("arr: {}".format(arr))
 
     def _transform(test_acc):
         max_len = len(test_acc[-1])
@@ -559,6 +558,7 @@ def plot_acc(arr): # arr is the array of metrics
         return res
 
     for i, m in enumerate(arr):
+        print("axs: {}".format(axs))
         ax = axs[i]
         acc = m['test_top1_acc']
         tr = _transform(acc)
