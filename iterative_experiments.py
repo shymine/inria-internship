@@ -16,7 +16,7 @@ def train_model(models_path, cr_params, device):
         params['name'] += "_prune_{}".format(model.keep_ratio * 100)
     if mode == "0":
         params['epochs'] = 200
-    opti_param = (params['learning_rate'], params['weight_decay'], params['momentum'], -1)
+    opti_param = (params['learning_rate']/10, params['weight_decay'], params['momentum'], -1)
     lr_schedule_params = (params['milestones'], params['gammas'])
 
     model.to(device)
@@ -89,7 +89,7 @@ def main(mode):
     #     params = m[0].parameters(True)
     #     for p in params:
     #         print("{}\n".format(p))
-
+    af.plot_acc([m[1] for m in arr])
 
 if __name__ == '__main__':
     try:

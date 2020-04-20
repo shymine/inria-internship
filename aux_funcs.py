@@ -577,4 +577,4 @@ def plot_acc(arr): # arr is the array of metrics
                 label="final output")
     name = time.asctime(time.localtime(time.time())).replace(" ", "_")
 
-    fig.savefig("{}.pdf".format(name))
+    fig.savefig("results/{}.pdf".format(name))
