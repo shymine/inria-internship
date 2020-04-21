@@ -15,7 +15,7 @@ def train_model(models_path, cr_params, device):
     if model.prune:
         params['name'] += "_prune_{}".format(model.keep_ratio * 100)
     if mode == "0":
-        params['epochs'] = 200
+        params['epochs'] = 300
     opti_param = (params['learning_rate']/10, params['weight_decay'], params['momentum'], -1)
     lr_schedule_params = (params['milestones'], params['gammas'])
 

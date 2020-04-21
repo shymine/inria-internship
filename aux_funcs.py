@@ -554,12 +554,10 @@ def plot_acc(arr): # arr is the array of metrics
             else:
                 a = copy.deepcopy(i)
             tmp.append(a)
-        print("res1: {}".format(tmp))
         res = [[] for _ in tmp[0]]
         for i in tmp:
             for id, j in enumerate(i):
                 res[id].append(j)
-        print("res: {}".format(res))
         return res
 
     for i, m in enumerate(arr):
