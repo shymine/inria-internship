@@ -16,7 +16,7 @@ def train_model(models_path, cr_params, device):
         params['name'] += "_prune_{}".format(model.keep_ratio * 100)
     if mode == "0":
         params['epochs'] = 300
-    if type == "full":
+    if "full" in type:
         params['learning_rate'] = 0.1
     print("lr: {}".format(params['learning_rate']))
 
@@ -30,7 +30,7 @@ def train_model(models_path, cr_params, device):
     _link_metrics(params, metrics)
 
     arcs.save_model(model, params, models_path, params['name'], epoch=-1)
-    return (model, params)
+    return model, params
 
 
 def multi_experiments(models_path, params, device):

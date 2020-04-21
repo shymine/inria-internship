@@ -81,6 +81,7 @@ class MultiStepMultiLR(_LRScheduler):
             new_lr = base_lr * np.prod(self.gammas[:cur_milestone])
             new_lr = round(new_lr, 8)
             lrs.append(new_lr)
+        print("af scheduler: {}".format(lrs))
         return lrs
 
 
