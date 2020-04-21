@@ -16,7 +16,9 @@ def train_model(models_path, cr_params, device):
         params['name'] += "_prune_{}".format(model.keep_ratio * 100)
     if mode == "0":
         params['epochs'] = 300
-    opti_param = (params['learning_rate']/10, params['weight_decay'], params['momentum'], -1)
+    if type != "full":
+        params['learning_rate'] = params['learning_rate']/10
+    opti_param = (params['learning_rate'], params['weight_decay'], params['momentum'], -1)
     lr_schedule_params = (params['milestones'], params['gammas'])
 
     model.to(device)
@@ -76,7 +78,7 @@ def main(mode, load):
     #     ('full_ic', None, (False, None))
     # ]
     create_bool = [
-        1 if i == 0
+        1 if i == 0 or i == 6
         else 0 for i in range(len(create_params))
     ]
     if load is not None:
