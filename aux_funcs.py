@@ -81,8 +81,9 @@ class MultiStepMultiLR(_LRScheduler):
             new_lr = base_lr * np.prod(self.gammas[:cur_milestone])
             new_lr = round(new_lr, 8)
             lrs.append(new_lr)
+        print("base_lrs: {}".format(self.base_lrs))
         print("af scheduler: {}".format(lrs))
-        return lrs
+        return self.base_lrs # lrs
 
 
 # flatten the output of conv layers for fully connected layers
