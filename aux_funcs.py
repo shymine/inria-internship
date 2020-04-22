@@ -541,7 +541,7 @@ def plot_acc(arr): # arr is the array of metrics
     print("arr_l: {}".format(len(arr)))
     fig, axs = plt.subplots(len(arr),1)
     try:
-        axs = iter(axs)
+        axs = list(axs)
     except TypeError as te:
         axs = [axs]
 

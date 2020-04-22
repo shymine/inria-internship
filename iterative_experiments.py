@@ -15,7 +15,7 @@ def train_model(models_path, cr_params, device):
     if model.prune:
         params['name'] += "_prune_{}".format(model.keep_ratio * 100)
     if mode == "0":
-        params['epochs'] = 300
+        params['epochs'] = 200
     if "full" in type:
         params['learning_rate'] = 0.1
     print("lr: {}".format(params['learning_rate']))

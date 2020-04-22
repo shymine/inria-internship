@@ -689,6 +689,7 @@ def epoch_routine(model, datas, optimizer, scheduler, epoch, epochs, augment, me
     cur_lr = af.get_lr(optimizer)
     print('\nEpoch: {}/{}'.format(epoch, epochs))
     print('cur_lr: {}'.format(cur_lr))
+    print("scheduler state dict: {}".format(scheduler.state_dict()))
     max_coeffs = calc_coeff(model)
     cur_coeffs = 0.01 + epoch * (np.array(max_coeffs) / epochs)
     cur_coeffs = np.minimum(max_coeffs, cur_coeffs)
