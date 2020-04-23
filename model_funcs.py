@@ -685,8 +685,7 @@ def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
 
 
 def epoch_routine(model, datas, optimizer, scheduler, epoch, epochs, augment, metrics, device):
-    test = scheduler.step()
-    print("test scheduler.step(): {}".format(test))
+    scheduler.step()
     cur_lr = af.get_lr(optimizer)
     print('\nEpoch: {}/{}'.format(epoch, epochs))
     print('cur_lr: {}'.format(cur_lr))

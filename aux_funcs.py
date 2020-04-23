@@ -243,7 +243,6 @@ def get_lr(optimizers):
     if isinstance(optimizers, dict):
         return optimizers[list(optimizers.keys())[-1]].param_groups[-1]['lr']
     else:
-        print("param_groups: {}".format(optimizers.param_groups))
         return optimizers.param_groups[-1]['lr']
 
 
@@ -258,8 +257,7 @@ def get_full_optimizer(model, lr_params, stepsize_params):
 
     optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, momentum=momentum,
                     weight_decay=weight_decay)
-    scheduler = ExponentialLR(optimizer, gamma=0.9, last_epoch=-1)
-    #MultiStepMultiLR(optimizer, milestones=milestones, gammas=gammas, last_epoch=epoch)
+    scheduler = MultiStepMultiLR(optimizer, milestones=milestones, gammas=gammas, last_epoch=epoch)
 
     return optimizer, scheduler
 
