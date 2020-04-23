@@ -567,6 +567,7 @@ def plot_acc(arr): # arr is the array of metrics
         ax = axs[i]
         acc = m['test_top1_acc']
         tr = _transform(acc)
+        print("tr: {}".format(tr))
         ax.set_xlabel('epochs')
         ax.set_ylabel('accuracy')
         ax.set_title(m['name'])
