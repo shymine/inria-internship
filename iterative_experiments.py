@@ -15,7 +15,7 @@ def train_model(models_path, cr_params, device):
     if model.prune:
         params['name'] += "_prune_{}".format(model.keep_ratio * 100)
     if mode == "0":
-        params['epochs'] = 200
+        params['epochs'] = 20 #200
     if "full" in type:
         params['learning_rate'] = 0.1
     print("lr: {}".format(params['learning_rate']))
@@ -80,7 +80,7 @@ def main(mode, load):
     #     ('full_ic', None, (False, None))
     # ]
     create_bool = [
-        1 if i == 0 or i == 6
+        1 if i == 0
         else 0 for i in range(len(create_params))
     ]
     if load is not None:
