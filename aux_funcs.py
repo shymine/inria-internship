@@ -569,6 +569,7 @@ def plot_acc(arr): # arr is the array of metrics
         tr = _transform(acc)
         ax.set_xlabel('epochs')
         ax.set_ylabel('accuracy')
+        ax.set_title(m['name'])
         ax.plot([i for i in range(len(acc))],
                 tr[0],
                 label="IC 1")
