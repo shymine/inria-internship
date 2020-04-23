@@ -83,7 +83,7 @@ class MultiStepMultiLR(_LRScheduler):
             lrs.append(new_lr)
         print("base_lrs: {}".format(self.base_lrs))
         print("af scheduler: {}".format(lrs))
-        return self.base_lrs # lrs
+        return lrs
 
 
 # flatten the output of conv layers for fully connected layers
@@ -243,6 +243,7 @@ def get_lr(optimizers):
     if isinstance(optimizers, dict):
         return optimizers[list(optimizers.keys())[-1]].param_groups[-1]['lr']
     else:
+        print("param_groups: {}".format(optimizers.param_groups))
         return optimizers.param_groups[-1]['lr']
 
 
