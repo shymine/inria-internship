@@ -24,7 +24,7 @@ plt.rcParams.update({'font.size': 13})
 
 from bisect import bisect_right
 from torch.optim import SGD, Adam
-from torch.optim.lr_scheduler import _LRScheduler
+from torch.optim.lr_scheduler import _LRScheduler, ExponentialLR
 from torch.nn import CrossEntropyLoss
 
 import network_architectures as arcs
@@ -257,7 +257,8 @@ def get_full_optimizer(model, lr_params, stepsize_params):
 
     optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, momentum=momentum,
                     weight_decay=weight_decay)
-    scheduler = MultiStepMultiLR(optimizer, milestones=milestones, gammas=gammas, last_epoch=epoch)
+    scheduler = ExponentialLR(optimizer, gamma=0.9, last_epoch=-1)
+    #MultiStepMultiLR(optimizer, milestones=milestones, gammas=gammas, last_epoch=epoch)
 
     return optimizer, scheduler
 
