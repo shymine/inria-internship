@@ -171,7 +171,7 @@ def create_resnet_iterative(models_path, type="full", mode=None, prune=(False, 0
 
     model_params['learning_rate'] = 0.01
     model_params['epochs'] = 100
-    model_params['milestones'] = [100, 150, 175]
+    model_params['milestones'] = [10, 15, 17]
     model_params['gammas'] = [10, 0.1, 0.1]
 
     model_params['base_model'] = model_name
