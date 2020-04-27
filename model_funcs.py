@@ -676,7 +676,7 @@ def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
     for epoch in range(epochs):
         epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
 
-        if to_grow([metrics['test_top1_acc'][-2], metrics['test_top1_acc'][-1]]):
+        if len(metrics['test_top1_acc']) >=2 and to_grow([metrics['test_top1_acc'][-2], metrics['test_top1_acc'][-1]]):
             print("num_output, ic_num: {}, {}".format(model.num_output, model.num_ics))
             if model.num_output == model.num_ics + 1:
                 break
