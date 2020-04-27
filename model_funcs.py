@@ -663,16 +663,20 @@ def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
 
     model.to(device)
     model.to_train()
-    last_loss = None
-    for epoch in range(epochs):
-        new_loss = epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
-        loss_diff = 10
-        if last_loss is not None:
-            loss_diff = new_loss - last_loss
-            print("loss diff: {}".format(loss_diff))
-        last_loss = new_loss
 
-        if abs(loss_diff) < 0.001:
+    def to_grow(acc_s):
+        grow = False
+        if len(acc_s[0])>=2:
+            for a,b in zip(acc_s[0], acc_s[1]):
+                grow = abs(a-b)<0.001
+                if not grow:
+                    break
+        return grow
+
+    for epoch in range(epochs):
+        epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
+
+        if to_grow([metrics['test_top1_acc'][-2], metrics['test_top1_acc'][-1]]):
             print("num_output, ic_num: {}, {}".format(model.num_output, model.num_ics))
             if model.num_output == model.num_ics + 1:
                 break
