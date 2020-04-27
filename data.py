@@ -37,6 +37,7 @@ class CIFAR10:
         self.normalized = transforms.Compose([transforms.ToTensor(), normalize])
 
         self.aug_trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=self.augmented)
+        self.aug_valset = self.aug_trainset
         self.aug_train_loader = torch.utils.data.DataLoader(self.aug_trainset, batch_size=batch_size, shuffle=True,
                                                             num_workers=4)
 

@@ -668,7 +668,7 @@ def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
         grow = False
         if len(acc_s[0])>=2:
             for a,b in zip(acc_s[0], acc_s[1]):
-                grow = abs(a-b)<0.01
+                grow = abs(a-b)<0.02
                 if not grow:
                     break
         return grow

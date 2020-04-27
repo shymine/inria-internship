@@ -18,6 +18,10 @@ def train_model(models_path, cr_params, device):
         params['epochs'] = 150
         params['milestones'] = [80, 100, 130]
         params['gammas'] = [0.1, 0.1, 0.1]
+    if mode == "4":
+        params['epochs'] = 300
+        params['milestones'] = [100, 150, 200]
+        params['gammas'] = [0.1, 0.1, 0.1]
     if "full" in type:
         params['learning_rate'] = 0.1
     print("lr: {}".format(params['learning_rate']))
@@ -82,7 +86,7 @@ def main(mode, load):
     #     ('full_ic', None, (False, None))
     # ]
     create_bool = [
-        1 if i == 4
+        1 if i == 4 or i == 0
         else 0 for i in range(len(create_params))
     ]
     if load is not None:
