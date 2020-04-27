@@ -535,7 +535,7 @@ def format_outputs(outputs):
 def print_acc(arr):
     str = "accuracies:\n"
     for i in arr:
-        str += "{}: {}, \n".format(i[1]['name'], i[1]['test_top1_acc'][-1])
+        str += "{}: {}, \n".format(i[1]['name'], i[1]['valid_top1_acc'][-1])
     print(str)
 
 def plot_acc(arr): # arr is the array of metrics
@@ -565,7 +565,7 @@ def plot_acc(arr): # arr is the array of metrics
     for i, m in enumerate(arr):
         print("axs: {}".format(axs))
         ax = axs[i]
-        acc = m['test_top1_acc']
+        acc = m['valid_top1_acc']
         tr = _transform(acc)
         # print("tr: {}".format(tr))
         ax.set_xlabel('epochs')

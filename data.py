@@ -23,7 +23,7 @@ class AddTrigger(object):
 
 
 class CIFAR10:
-    def __init__(self, batch_size=128, add_trigger=False):
+    def __init__(self, batch_size=128, add_trigger=False, valid_ratio=0.1):
         self.batch_size = batch_size
         self.img_size = 32
         self.num_classes = 10
@@ -36,13 +36,18 @@ class CIFAR10:
 
         self.normalized = transforms.Compose([transforms.ToTensor(), normalize])
 
-        self.aug_trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=self.augmented)
-        self.aug_valset = self.aug_trainset
+        aug_cifar10_trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=self.augmented)
+        self.aug_trainset, self.aug_validset = torch.utils.data.random_split(aug_cifar10_trainset,[len(aug_cifar10_trainset)*(1-valid_ratio),len(aug_cifar10_trainset)*valid_ratio])
+
         self.aug_train_loader = torch.utils.data.DataLoader(self.aug_trainset, batch_size=batch_size, shuffle=True,
                                                             num_workers=4)
+        self.aug_valid_loader = torch.utils.data.DataLoader(self.aug_validset, batch_size=batch_size, shuffle=True,
+                                                            num_workers=4)
 
-        self.trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=self.normalized)
+        cifar10_trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=self.normalized)
+        self.trainset, self.validset = torch.utils.data.random_split(aug_cifar10_trainset,[len(cifar10_trainset)*(1-valid_ratio),len(cifar10_trainset)*valid_ratio])
         self.train_loader = torch.utils.data.DataLoader(self.trainset, batch_size=batch_size, shuffle=True)
+        self.valid_loader = torch.utils.data.DataLoader(self.validset, batch_size=batch_size, shuffle=True)
 
         self.testset = datasets.CIFAR10(root='./data', train=False, download=True, transform=self.normalized)
         self.test_loader = torch.utils.data.DataLoader(self.testset, batch_size=batch_size, shuffle=False,

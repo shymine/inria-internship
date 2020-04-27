@@ -423,8 +423,8 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
     augment = model.augment_training
     metrics = {
         'epoch_times': [],
-        'test_top1_acc': [],
-        'test_top3_acc': [],
+        'valid_top1_acc': [],
+        'valid_top3_acc': [],
         'train_top1_acc': [],
         'train_top3_acc': [],
         'lrs': []
@@ -457,10 +457,10 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
 
         if model.num_output == model.num_ics + 1:
             if best_model is None:
-                best_model, accuracies = copy.deepcopy(model), metrics['test_top1_acc'][-1]
+                best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
                 print("Begin best_model: {}".format(accuracies))
-            elif sum(metrics['test_top1_acc'][-1]) > sum(accuracies):
-                best_model, accuracies = copy.deepcopy(model), metrics['test_top1_acc'][-1]
+            elif sum(metrics['valid_top1_acc'][-1]) > sum(accuracies):
+                best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
     return metrics
 
 
@@ -532,8 +532,8 @@ def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
     augment = model.augment_training
     metrics = {
         'epoch_times': [],
-        'test_top1_acc': [],
-        'test_top3_acc': [],
+        'valid_top1_acc': [],
+        'valid_top3_acc': [],
         'train_top1_acc': [],
         'train_top3_acc': [],
         'lrs': []
@@ -590,8 +590,8 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
     augment = model.augment_training
     metrics = {
         'epoch_times': [],
-        'test_top1_acc': [],
-        'test_top3_acc': [],
+        'valid_top1_acc': [],
+        'valid_top3_acc': [],
         'train_top1_acc': [],
         'train_top3_acc': [],
         'lrs': []
@@ -653,8 +653,8 @@ def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
     losses = []
     metrics = {
         'epoch_times': [],
-        'test_top1_acc': [],
-        'test_top3_acc': [],
+        'valid_top1_acc': [],
+        'valid_top3_acc': [],
         'train_top1_acc': [],
         'train_top3_acc': [],
         'lrs': []
@@ -668,7 +668,7 @@ def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
         grow = False
         if len(acc_s[0])>=2:
             for a,b in zip(acc_s[0], acc_s[1]):
-                grow = abs(a-b)<0.02
+                grow = abs(a-b)<0.05
                 if not grow:
                     break
         return grow
@@ -676,7 +676,7 @@ def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
     for epoch in range(epochs):
         epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
 
-        if len(metrics['test_top1_acc']) >=2 and to_grow([metrics['test_top1_acc'][-2], metrics['test_top1_acc'][-1]]):
+        if len(metrics['valid_top1_acc']) >=2 and to_grow([metrics['valid_top1_acc'][-2], metrics['valid_top1_acc'][-1]]):
             print("num_output, ic_num: {}, {}".format(model.num_output, model.num_ics))
             if model.num_output == model.num_ics + 1:
                 break
@@ -709,11 +709,11 @@ def epoch_routine(model, datas, optimizer, scheduler, epoch, epochs, augment, me
         if i % 100 == 0:
             print("Loss: {}".format(total_loss))
 
-    top1_test, top3_test = sdn_test(model, datas.test_loader, device)
+    top1_test, top3_test = sdn_test(model, datas.aug_valid_loader if augment else datas.valid_loader, device)
     end_time = time.time()
 
-    print('Top1 Test accuracies: {}'.format(top1_test))
-    print('Top3 Test accuracies: {}'.format(top3_test))
+    print('Top1 Valid accuracies: {}'.format(top1_test))
+    print('Top3 Valid accuracies: {}'.format(top3_test))
     top1_train, top3_train = sdn_test(model, get_loader(datas, augment), device)
     print('Top1 Train accuracies: {}'.format(top1_train))
     print('Top3 Train accuracies: {}'.format(top3_train))
@@ -721,8 +721,8 @@ def epoch_routine(model, datas, optimizer, scheduler, epoch, epochs, augment, me
     epoch_time = int(end_time - start_time)
     print('Epoch took {} seconds.'.format(epoch_time))
 
-    metrics['test_top1_acc'].append(top1_test)
-    metrics['test_top3_acc'].append(top3_test)
+    metrics['valid_top1_acc'].append(top1_test)
+    metrics['valid_top3_acc'].append(top3_test)
     metrics['train_top1_acc'].append(top1_train)
     metrics['train_top3_acc'].append(top3_train)
     metrics['epoch_times'].append(epoch_time)
