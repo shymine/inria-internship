@@ -15,8 +15,8 @@ def train_model(models_path, cr_params, device):
     if model.prune:
         params['name'] += "_prune_{}".format(model.keep_ratio * 100)
     if mode == "0":
-        params['epochs'] = 150
-        params['milestones'] = [80, 100, 130]
+        params['epochs'] = 200
+        params['milestones'] = [80, 120, 160]
         params['gammas'] = [0.1, 0.1, 0.1]
     if mode == "4":
         params['epochs'] = 300
@@ -50,6 +50,8 @@ def _link_metrics(params, metrics):
     params['train_top3_acc'] = metrics['train_top3_acc']
     params['test_top1_acc'] = metrics['test_top1_acc']
     params['test_top3_acc'] = metrics['test_top3_acc']
+    params['valid_top1_acc'] = metrics['valid_top1_acc']
+    params['valid_top3_acc'] = metrics['valid_top3_acc']
     params['epoch_times'] = metrics['epoch_times']
     params['lrs'] = metrics['lrs']
 
