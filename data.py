@@ -37,7 +37,8 @@ class CIFAR10:
         self.normalized = transforms.Compose([transforms.ToTensor(), normalize])
 
         aug_cifar10_trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=self.augmented)
-        self.aug_trainset, self.aug_validset = torch.utils.data.random_split(aug_cifar10_trainset,[len(aug_cifar10_trainset)*(1-valid_ratio),len(aug_cifar10_trainset)*valid_ratio])
+        self.aug_trainset, self.aug_validset = torch.utils.data.random_split(
+            aug_cifar10_trainset,[int(len(aug_cifar10_trainset)*(1-valid_ratio)), int(len(aug_cifar10_trainset)*valid_ratio)])
 
         self.aug_train_loader = torch.utils.data.DataLoader(self.aug_trainset, batch_size=batch_size, shuffle=True,
                                                             num_workers=4)
@@ -45,7 +46,8 @@ class CIFAR10:
                                                             num_workers=4)
 
         cifar10_trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=self.normalized)
-        self.trainset, self.validset = torch.utils.data.random_split(aug_cifar10_trainset,[len(cifar10_trainset)*(1-valid_ratio),len(cifar10_trainset)*valid_ratio])
+        self.trainset, self.validset = torch.utils.data.random_split(
+            aug_cifar10_trainset,[int(len(cifar10_trainset)*(1-valid_ratio)), int(len(cifar10_trainset)*valid_ratio)])
         self.train_loader = torch.utils.data.DataLoader(self.trainset, batch_size=batch_size, shuffle=True)
         self.valid_loader = torch.utils.data.DataLoader(self.validset, batch_size=batch_size, shuffle=True)
 
