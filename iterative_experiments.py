@@ -32,11 +32,11 @@ def train_model(models_path, cr_params, device):
     model.to(device)
 
     optimizer, scheduler = af.get_full_optimizer(model, opti_param, lr_schedule_params)
-    metrics = model.train_func(model, dataset, params['epochs'], optimizer, scheduler, device)
+    metrics, best_model = model.train_func(model, dataset, params['epochs'], optimizer, scheduler, device)
     _link_metrics(params, metrics)
 
-    arcs.save_model(model, params, models_path, params['name'], epoch=-1)
-    return model, params
+    arcs.save_model(best_model, params, models_path, params['name'], epoch=-1)
+    return best_model, params
 
 
 def multi_experiments(models_path, params, device):

@@ -463,8 +463,9 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
                 print("Begin best_model: {}".format(accuracies))
             elif sum(metrics['valid_top1_acc'][-1]) > sum(accuracies):
                 best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
-    metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(model, data.test_loader, device)
-    return metrics
+                print("New best model: {}".format(accuracies))
+    metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(best_model, data.test_loader, device)
+    return metrics, best_model
 
 
 # training with freezing the previous layers
@@ -494,7 +495,7 @@ def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
     if model.prune:
         loader = get_loader(data, False)
         count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, 0, device)
-
+    best_model, accuracies = None, None
     for epoch in range(max_epoch):
         epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
 
@@ -522,8 +523,15 @@ def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
             for bloc in model.layers[:index_to_freeze]:
                 for param in bloc.parameters(True):
                     param.require_grad = False
-    metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(model, data.test_loader, device)
-    return metrics
+        if model.num_output == model.num_ics + 1:
+            if best_model is None:
+                best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
+                print("Begin best_model: {}".format(accuracies))
+            elif sum(metrics['valid_top1_acc'][-1]) > sum(accuracies):
+                best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
+                print("New best model: {}".format(accuracies))
+    metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(best_model, data.test_loader, device)
+    return metrics, best_model
 
 
 def sdn_loss(output, label, coeffs=None):
@@ -573,7 +581,7 @@ def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
     if model.prune:
         loader = get_loader(data, False)
         count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, 0, device)
-
+    best_model, accuracies = None, None
     for epoch in range(epochs):
 
         epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
@@ -592,8 +600,15 @@ def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
         if epoch in unfreeze_epochs:
             for params in model.parameters(True):
                 params.require_grad = True
-    metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(model, data.test_loader, device)
-    return metrics
+        if model.num_output == model.num_ics + 1:
+            if best_model is None:
+                best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
+                print("Begin best_model: {}".format(accuracies))
+            elif sum(metrics['valid_top1_acc'][-1]) > sum(accuracies):
+                best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
+                print("New best model: {}".format(accuracies))
+    metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(best_model, data.test_loader, device)
+    return metrics, best_model
 
 
 # same as 2 but with more and more epochs between the growings
@@ -638,7 +653,7 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
     if model.prune:
         loader = get_loader(data, False)
         count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, 0, device)
-
+    best_model, accuracies = None, None
     for epoch in range(int(epoch_growth[-1])):
         epoch_routine(model, data, optimizer, scheduler, epoch, int(epoch_growth[-1]), augment, metrics, device)
 
@@ -656,8 +671,15 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
         if epoch in unfreeze_epochs:
             for params in model.parameters(True):
                 params.require_grad = True
-    metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(model, data.test_loader, device)
-    return metrics
+        if model.num_output == model.num_ics + 1:
+            if best_model is None:
+                best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
+                print("Begin best_model: {}".format(accuracies))
+            elif sum(metrics['valid_top1_acc'][-1]) > sum(accuracies):
+                best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
+                print("New best model: {}".format(accuracies))
+    metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(best_model, data.test_loader, device)
+    return metrics, best_model
 
 
 # grow when loss stagnate
@@ -688,7 +710,7 @@ def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
                 if not grow:
                     break
         return grow
-
+    best_model, accuracies = None, None
     for epoch in range(epochs):
         epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
 
@@ -700,8 +722,15 @@ def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
             model.to(device)
             optimizer.add_param_group({'params': grown_layers})
             print("model grow: {}".format(model.num_output))
-    metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(model, data.test_loader, device)
-    return metrics
+        if model.num_output == model.num_ics + 1:
+            if best_model is None:
+                best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
+                print("Begin best_model: {}".format(accuracies))
+            elif sum(metrics['valid_top1_acc'][-1]) > sum(accuracies):
+                best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
+                print("New best model: {}".format(accuracies))
+    metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(best_model, data.test_loader, device)
+    return metrics, best_model
 
 
 def epoch_routine(model, datas, optimizer, scheduler, epoch, epochs, augment, metrics, device):
