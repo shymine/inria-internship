@@ -458,6 +458,7 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
                 count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
 
         if model.num_output == model.num_ics + 1:
+            print("best model evaluation: {}/{}".format(metrics['valid_top1_acc'][-1], accuracies))
             if best_model is None:
                 best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
                 print("Begin best_model: {}".format(accuracies))
@@ -524,6 +525,7 @@ def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
                 for param in bloc.parameters(True):
                     param.require_grad = False
         if model.num_output == model.num_ics + 1:
+            print("best model evaluation")
             if best_model is None:
                 best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
                 print("Begin best_model: {}".format(accuracies))
@@ -601,6 +603,7 @@ def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
             for params in model.parameters(True):
                 params.require_grad = True
         if model.num_output == model.num_ics + 1:
+            print("best model evaluation")
             if best_model is None:
                 best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
                 print("Begin best_model: {}".format(accuracies))
@@ -672,6 +675,7 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
             for params in model.parameters(True):
                 params.require_grad = True
         if model.num_output == model.num_ics + 1:
+            print("best model evaluation")
             if best_model is None:
                 best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
                 print("Begin best_model: {}".format(accuracies))
@@ -723,6 +727,7 @@ def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
             optimizer.add_param_group({'params': grown_layers})
             print("model grow: {}".format(model.num_output))
         if model.num_output == model.num_ics + 1:
+            print("best model evaluation")
             if best_model is None:
                 best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
                 print("Begin best_model: {}".format(accuracies))
