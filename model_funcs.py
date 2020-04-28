@@ -466,6 +466,8 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
                 best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
                 print("New best model: {}".format(accuracies))
     metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(best_model, data.test_loader, device)
+    test_top1, test_top3 = sdn_test(model, data.test_loader, device)
+    print("comparison best and latest: {}/{}".format(metrics['test_top1_acc'], test_top1))
     return metrics, best_model
 
 
