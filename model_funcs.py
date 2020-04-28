@@ -427,6 +427,8 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
         'valid_top3_acc': [],
         'train_top1_acc': [],
         'train_top3_acc': [],
+        'test_top1_acc': [],
+        'test_top3_acc': [],
         'lrs': []
     }
     epoch_growth = [25, 50, 75]  # [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
@@ -461,6 +463,7 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
                 print("Begin best_model: {}".format(accuracies))
             elif sum(metrics['valid_top1_acc'][-1]) > sum(accuracies):
                 best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
+    metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(model, data.test_loader, device)
     return metrics
 
 
@@ -468,7 +471,14 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
 def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
     print("iter training 1")
     augment = model.augment_training
-    metrics = dict(epoch_times=[], test_top1_acc=[], test_top3_acc=[], train_top1_acc=[], train_top3_acc=[], lrs=[])
+    metrics = dict(epoch_times=[],
+                   valid_top1_acc=[],
+                   valid_top3_acc=[],
+                   train_top1_acc=[],
+                   train_top3_acc=[],
+                   test_top1_acc=[],
+                   test_top3_acc=[],
+                   lrs=[])
     epoch_growth = [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
     print("epoch growth: {}".format(epoch_growth))
     freeze_epochs = (np.array([0, 25, 50]) + epochs).tolist()
@@ -512,7 +522,7 @@ def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
             for bloc in model.layers[:index_to_freeze]:
                 for param in bloc.parameters(True):
                     param.require_grad = False
-
+    metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(model, data.test_loader, device)
     return metrics
 
 
@@ -536,6 +546,8 @@ def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
         'valid_top3_acc': [],
         'train_top1_acc': [],
         'train_top3_acc': [],
+        'test_top1_acc': [],
+        'test_top3_acc': [],
         'lrs': []
     }
     epoch_growth = [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
@@ -580,7 +592,7 @@ def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
         if epoch in unfreeze_epochs:
             for params in model.parameters(True):
                 params.require_grad = True
-
+    metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(model, data.test_loader, device)
     return metrics
 
 
@@ -594,6 +606,8 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
         'valid_top3_acc': [],
         'train_top1_acc': [],
         'train_top3_acc': [],
+        'test_top1_acc': [],
+        'test_top3_acc': [],
         'lrs': []
     }
     increase_value = epochs / (model.num_ics + 1)
@@ -642,7 +656,7 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
         if epoch in unfreeze_epochs:
             for params in model.parameters(True):
                 params.require_grad = True
-
+    metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(model, data.test_loader, device)
     return metrics
 
 
@@ -657,6 +671,8 @@ def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
         'valid_top3_acc': [],
         'train_top1_acc': [],
         'train_top3_acc': [],
+        'test_top1_acc': [],
+        'test_top3_acc': [],
         'lrs': []
     }
     # def grow(model, previous_loss, new_loss):
@@ -684,7 +700,7 @@ def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
             model.to(device)
             optimizer.add_param_group({'params': grown_layers})
             print("model grow: {}".format(model.num_output))
-
+    metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(model, data.test_loader, device)
     return metrics
 
 
