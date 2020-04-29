@@ -36,6 +36,7 @@ def train_model(models_path, cr_params, device):
     _link_metrics(params, metrics)
 
     arcs.save_model(best_model, params, models_path, params['name'], epoch=-1)
+    print("test acc: {}, last val: {}".format(params['test_top1_acc'], params['valid_top1_acc'][-1]))
     return best_model, params
 
 
