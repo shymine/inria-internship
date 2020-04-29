@@ -16,8 +16,8 @@ def train_model(models_path, cr_params, device):
         params['name'] += "_prune_{}".format(model.keep_ratio * 100)
     if mode == "0":
         params['epochs'] = 200
-        params['milestones'] = [75, 120, 160, 180]
-        params['gammas'] = [10, 0.1, 0.1, 0.1]
+        params['milestones'] = [120, 160, 180]
+        params['gammas'] = [0.1, 0.1, 0.1]
     if mode == "4":
         params['epochs'] = 300
         params['milestones'] = [100, 150, 200]
@@ -88,7 +88,7 @@ def main(mode, load):
     #     ('full_ic', None, (False, None))
     # ]
     create_bool = [
-        1 if i == 4
+        1 if i == 0
         else 0 for i in range(len(create_params))
     ]
     if load is not None:
