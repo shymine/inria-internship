@@ -88,7 +88,7 @@ def main(mode, load):
     #     ('full_ic', None, (False, None))
     # ]
     create_bool = [
-        1 if i == 0
+        1 if i == 4
         else 0 for i in range(len(create_params))
     ]
     if load is not None:
