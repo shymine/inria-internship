@@ -7,7 +7,9 @@ import aux_funcs as af
 import network_architectures as arcs
 
 
-def train_model(models_path, cr_params, device):
+
+def train_model(models_path, cr_params, device, num=0):
+    print("num: {}".format(num))
     type, mode, pruning = cr_params
     model, params = arcs.create_resnet_iterative(models_path, type, mode, pruning, False)
     dataset = af.get_dataset('cifar10')
@@ -15,13 +17,27 @@ def train_model(models_path, cr_params, device):
     if model.prune:
         params['name'] += "_prune_{}".format(model.keep_ratio * 100)
     if mode == "0":
-        params['epochs'] = 200
-        params['milestones'] = [100, 120, 150]
-        params['gammas'] = [0.1, 0.1, 0.01]
+        if num == 0:
+            params['epochs'] = 200
+            params['milestones'] = [100, 120, 150]
+            params['gammas'] = [0.1, 0.1, 0.01]
+        elif num == 1:
+            params['epochs'] = 200
+            params['milestones'] = [100, 133, 166]
+            params['gammas'] = [0.1, 0.1, 0.001]
+        elif num == 2:
+            params['epochs'] = 200
+            params['milestones'] = [100, 133, 166]
+            params['gammas'] = [0.1, 0.01, 0.001]
+        elif num == 3:
+            params['epochs'] = 150
+            params['milestones'] = [100, 120, 140]
+            params['gammas'] = [0.1, 0.01, 0.01]
     if mode == "4":
         params['epochs'] = 300
         params['milestones'] = [100, 150, 200]
         params['gammas'] = [0.1, 0.1, 0.1]
+
     if "full" in type:
         params['learning_rate'] = 0.1
     print("lr: {}".format(params['learning_rate']))
@@ -30,7 +46,6 @@ def train_model(models_path, cr_params, device):
     lr_schedule_params = (params['milestones'], params['gammas'])
 
     model.to(device)
-
     optimizer, scheduler = af.get_full_optimizer(model, opti_param, lr_schedule_params)
     metrics, best_model = model.train_func(model, dataset, params['epochs'], optimizer, scheduler, device)
     _link_metrics(params, metrics)
@@ -41,9 +56,17 @@ def train_model(models_path, cr_params, device):
 
 
 def multi_experiments(models_path, params, device):
+    count = 0
+    last_mode = None
     for create, bool in params:
         if bool:
-            yield train_model(models_path, create, device)
+            if last_mode is None:
+                last_mode = create[1]
+            elif create[1] != last_mode:
+                last_mode = create[1]
+                count = 0
+            yield train_model(models_path, create, device, num=count)
+            count +=1
 
 
 def _link_metrics(params, metrics):
@@ -62,34 +85,11 @@ def main(mode, load):
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
     create_params = [
-        ('iterative', '0', (False, None)),
-        ('iterative', '1', (False, None)),
-        ('iterative', '2', (False, None)),
-        ('iterative', '3', (False, None)),
-        ('iterative', '4', (False, None)),
-        # ('iterative', '0', (True, 0.5)),
-        # ('iterative', '1', (True, 0.5)),
-        # ('iterative', '2', (True, 0.5)),
-
-        ('full', None, (False, None)),
-        ('full_ic', None, (False, None))
+        ('iterative', '0', (False, None))
+        for _ in range(4)
     ]
-    # create_params = [
-    #     ('iterative', '0', (False, None)),
-    #     ('iterative', '0', (True, 0.8)),
-    #     ('iterative', '0', (True, 0.6)),
-    #     ('iterative', '0', (True, 0.5)),
-    #     ('iterative', '0', (True, 0.4)),
-    #     ('iterative', '0', (True, 0.3)),
-    #     ('iterative', '0', (True, 0.2)),
-    #     ('iterative', '0', (True, 0.1)),
-    #     ('iterative', '0', (True, 0.05)),
-    #
-    #     ('full', None, (False, None)),
-    #     ('full_ic', None, (False, None))
-    # ]
     create_bool = [
-        1 if i == 0
+        1 if i in [0,1,2,3,4]
         else 0 for i in range(len(create_params))
     ]
     if load is not None:
@@ -98,13 +98,6 @@ def main(mode, load):
     else:
         arr = list(multi_experiments(models_path, zip(create_params, create_bool), device))
     af.print_acc(arr)
-    # print("parameters")
-    # print("arr: {}".format([i for i in arr]))
-    # for m in arr[:0]:
-    #     print("m[0]: {}".format(m[0]))
-    #     params = m[0].parameters(True)
-    #     for p in params:
-    #         print("{}\n".format(p))
     af.plot_acc([m[1] for m in arr])
 
 if __name__ == '__main__':
