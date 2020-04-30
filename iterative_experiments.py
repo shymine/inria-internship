@@ -85,11 +85,11 @@ def main(mode, load):
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
     create_params = [
-        ('iterative', '0', (False, None))
-        for _ in range(4)
+        ('iterative', '0', (False, None)),
+        ('iterative', '4', (False, None))
     ]
     create_bool = [
-        1 if i in [0,1,2,3,4]
+        1 if i in [1]
         else 0 for i in range(len(create_params))
     ]
     if load is not None:
