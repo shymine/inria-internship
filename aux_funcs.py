@@ -541,6 +541,7 @@ def print_acc(arr):
 def plot_acc(arr): # arr is the array of metrics
     print("arr_l: {}".format(len(arr)))
     fig, axs = plt.subplots(len(arr),1)
+    fig.subplots_adjust(hspace=1)
     try:
         axs = list(axs)
     except TypeError as te:
@@ -570,7 +571,7 @@ def plot_acc(arr): # arr is the array of metrics
         # print("tr: {}".format(tr))
         ax.set_xlabel('epochs')
         ax.set_ylabel('accuracy')
-        ax.set_title('{}\nfinal acc: {}'.format(m['name'], m['test_top1_acc']))
+        ax.set_title('{}\n accuracy: {}'.format(m['name'], m['test_top1_acc']))
         ax.plot([i for i in range(len(acc))],
                 tr[0],
                 label="IC 1")

@@ -3,7 +3,8 @@ import aux_funcs as af
 def main():
     metrics = [
         dict(
-            test_top1_acc=[
+            name='truc1',
+            valid_top1_acc=[
                 [25],
                 [26],
                 [28, 20],
@@ -13,10 +14,12 @@ def main():
                 [30, 36, 35],
                 [30, 37, 40],
                 [30, 37, 41, 45]
-            ]
+            ],
+            test_top1_acc=[30, 38, 40, 44]
         ),
         dict(
-            test_top1_acc=[
+            name='truc2',
+            valid_top1_acc=[
                 [20],
                 [27],
                 [30, 25],
@@ -26,7 +29,8 @@ def main():
                 [31, 36, 37],
                 [31, 39, 41],
                 [31, 39, 42, 45]
-            ]
+            ],
+            test_top1_acc=[31, 40, 41, 44]
         )
     ]
 

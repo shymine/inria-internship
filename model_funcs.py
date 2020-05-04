@@ -444,7 +444,7 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
         loader = get_loader(data, False)
         count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, 0, device)
 
-    best_model, accuracies = None, None
+    best_model, accuracies, best_epoch = None, None, 0
     for epoch in range(1, epochs + 1):
         epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
 
@@ -461,12 +461,16 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
             print("best model evaluation: {}/{}".format(metrics['valid_top1_acc'][-1], accuracies))
             if best_model is None:
                 best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
+                best_epoch = epoch
                 print("Begin best_model: {}".format(accuracies))
             elif sum(metrics['valid_top1_acc'][-1]) > sum(accuracies):
                 best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
+                best_epoch = epoch
                 print("New best model: {}".format(accuracies))
+
     metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(best_model, data.test_loader, device)
     test_top1, test_top3 = sdn_test(model, data.test_loader, device)
+    print("best epoch: {}".format(best_epoch))
     print("comparison best and latest: {}/{}".format(metrics['test_top1_acc'], test_top1))
     return metrics, best_model
 
