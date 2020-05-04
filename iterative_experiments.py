@@ -86,10 +86,12 @@ def main(mode, load):
     device = af.get_pytorch_device()
     create_params = [
         ('iterative', '0', (False, None)),
-        ('iterative', '4', (False, None))
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None))
     ]
     create_bool = [
-        1 if i in [1]
+        1 if i in [0,1,2,3]
         else 0 for i in range(len(create_params))
     ]
     if load is not None:
