@@ -17,22 +17,47 @@ def train_model(models_path, cr_params, device, num=0):
     if model.prune:
         params['name'] += "_prune_{}".format(model.keep_ratio * 100)
     if mode == "0":
+        # if num == 0:
+        #     params['epochs'] = 200
+        #     params['milestones'] = [100, 120, 150]
+        #     params['gammas'] = [0.1, 0.1, 0.01]
+        # elif num == 1:
+        #     params['epochs'] = 200
+        #     params['milestones'] = [100, 133, 166]
+        #     params['gammas'] = [0.1, 0.1, 0.001]
+        # elif num == 2:
+        #     params['epochs'] = 200
+        #     params['milestones'] = [100, 133, 166]
+        #     params['gammas'] = [0.1, 0.01, 0.001]
+        # elif num == 3:
+        #     params['epochs'] = 150
+        #     params['milestones'] = [100, 120, 140]
+        #     params['gammas'] = [0.1, 0.01, 0.01]
         if num == 0:
-            params['epochs'] = 200
-            params['milestones'] = [100, 120, 150]
-            params['gammas'] = [0.1, 0.1, 0.01]
+            params['epochs'] = 150
+            params['milestones'] = [100, 120]
+            params['gammas'] = [0.1, 0.01]
         elif num == 1:
-            params['epochs'] = 200
-            params['milestones'] = [100, 133, 166]
-            params['gammas'] = [0.1, 0.1, 0.001]
+            params['epochs'] = 150
+            params['milestones'] = [100, 120]
+            params['gammas'] = [0.1, 0.1]
         elif num == 2:
-            params['epochs'] = 200
-            params['milestones'] = [100, 133, 166]
+            params['epochs'] = 150
+            params['milestones'] = [85, 100, 120]
             params['gammas'] = [0.1, 0.01, 0.001]
         elif num == 3:
             params['epochs'] = 150
-            params['milestones'] = [100, 120, 140]
+            params['milestones'] = [85, 100, 120]
             params['gammas'] = [0.1, 0.01, 0.01]
+        elif num == 4:
+            params['epochs'] = 150
+            params['milestones'] = [85, 100, 120]
+            params['gammas'] = [0.1, 0.1, 0.01]
+        elif num == 5:
+            params['epochs'] = 150
+            params['milestones'] = [85, 100, 120]
+            params['gammas'] = [0.1, 0.1, 0.1]
+
     if mode == "4":
         params['epochs'] = 300
         params['milestones'] = [100, 150, 200]
@@ -85,6 +110,8 @@ def main(mode, load):
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
     create_params = [
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None)),
         ('iterative', '0', (False, None)),
         ('iterative', '0', (False, None)),
         ('iterative', '0', (False, None)),
