@@ -91,7 +91,7 @@ def multi_experiments(models_path, params, device):
                 last_mode = create[1]
                 count = 0
             yield train_model(models_path, create, device, num=count)
-            count +=1
+            count += 1
 
 
 def _link_metrics(params, metrics):
