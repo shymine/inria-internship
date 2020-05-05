@@ -20,22 +20,22 @@ def train_model(models_path, cr_params, device, num=0):
         params['epochs'] = 200
         params['milestones'] = [100, 120, 150]
         params['gammas'] = [0.1, 0.1, 0.01]
-        if num == 0:
-            params['epochs'] = 150
-            params['milestones'] = [100, 120, 140]
-            params['gammas'] = [0.1, 0.1, 0.1]
-        elif num == 1:
-            params['epochs'] = 150
-            params['milestones'] = [100, 120, 140]
-            params['gammas'] = [0.1, 0.1, 0.01]
-        elif num == 2:
-            params['epochs'] = 150
-            params['milestones'] = [100, 120, 140]
-            params['gammas'] = [0.1, 0.01, 0.01]
-        elif num == 3:
-            params['epochs'] = 150
-            params['milestones'] = [100, 120, 140]
-            params['gammas'] = [0.1, 0.01, 0.001]
+        # if num == 0:
+        #     params['epochs'] = 150
+        #     params['milestones'] = [100, 120, 140]
+        #     params['gammas'] = [0.1, 0.1, 0.1]
+        # elif num == 1:
+        #     params['epochs'] = 150
+        #     params['milestones'] = [100, 120, 140]
+        #     params['gammas'] = [0.1, 0.1, 0.01]
+        # elif num == 2:
+        #     params['epochs'] = 150
+        #     params['milestones'] = [100, 120, 140]
+        #     params['gammas'] = [0.1, 0.01, 0.01]
+        # elif num == 3:
+        #     params['epochs'] = 150
+        #     params['milestones'] = [100, 120, 140]
+        #     params['gammas'] = [0.1, 0.01, 0.001]
 
     if mode == "4":
         params['epochs'] = 300
@@ -97,7 +97,7 @@ def main(mode, load):
         ('iterative', '0', (False, None))
     ]
     create_bool = [
-        1 if i in [0,1,2,3]
+        1 if i in [0,1,2,3,4,5]
         else 0 for i in range(len(create_params))
     ]
     if load is not None:
