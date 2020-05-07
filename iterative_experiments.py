@@ -18,8 +18,8 @@ def train_model(models_path, cr_params, device, num=0):
         params['name'] += "_prune_{}".format(model.keep_ratio * 100)
     if mode == "0":
         params['epochs'] = 200
-        params['milestones'] = [100, 120, 150]
-        params['gammas'] = [0.1, 0.1, 0.01]
+        params['milestones'] = [120, 160, 180]
+        params['gammas'] = [0.1, 0.1, 0.1]
 
     if mode == "4":
         params['epochs'] = 300
@@ -74,14 +74,20 @@ def main(mode, load):
     device = af.get_pytorch_device()
     create_params = [
         ('iterative', '0', (False, None)),
-        ('iterative', '0', (True, 0.9)),
-        ('iterative', '0', (True, 0.8)),
-        ('iterative', '0', (True, 0.6)),
-        ('iterative', '0', (True, 0.4)),
-        ('iterative', '0', (True, 0.2))
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None))
     ]
     create_bool = [
-        1 if i in [0,1,2,3,4,5]
+        1 if i in range(12)
         else 0 for i in range(len(create_params))
     ]
     if load is not None:
