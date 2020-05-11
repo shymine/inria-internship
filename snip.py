@@ -97,7 +97,6 @@ def snip_skip_layers(model, keep_ratio, loader, loss, device='cpu'):
 
     #compte le nombre de layers qui ont été pruned dans le modèle
     print("count_pruned in snip: {}".format(count_pruned))
-    print("model: {}".format(model))
 
     _model.to(device)
     _model.zero_grad()

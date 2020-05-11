@@ -73,7 +73,14 @@ def main(mode, load):
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
     create_params = [
-        ('iterative', '0', (True, 0.5))
+        ('iterative', '0', (True, 0.9)),
+        ('iterative', '0', (True, 0.8)),
+        ('iterative', '0', (True, 0.6)),
+        ('iterative', '0', (True, 0.5)),
+        ('iterative', '0', (True, 0.4)),
+        ('iterative', '0', (True, 0.3)),
+        ('iterative', '0', (True, 0.2)),
+        ('iterative', '0', (True, 0.1))
     ]
     create_bool = [
         1 if i in range(12)
