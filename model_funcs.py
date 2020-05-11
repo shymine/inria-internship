@@ -441,6 +441,7 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
     model.to_train()
 
     if model.prune:
+        print("first pruning")
         loader = get_loader(data, False)
         count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, 0, device)
 
@@ -453,6 +454,7 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
             model.to(device)
             optimizer.add_param_group({'params': grown_layers})
             print("model grow")
+            print("pruning?: {}".format(model.prune))
             if model.prune:
                 loader = get_loader(data, False)
                 count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)

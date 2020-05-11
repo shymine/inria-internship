@@ -17,7 +17,7 @@ def train_model(models_path, cr_params, device, num=0):
     if model.prune:
         params['name'] += "_prune_{}".format(model.keep_ratio * 100)
     if mode == "0":
-        params['epochs'] = 250
+        params['epochs'] = 200
         params['milestones'] = [120, 160, 180]
         params['gammas'] = [0.1, 0.1, 0.1]
 
@@ -73,18 +73,7 @@ def main(mode, load):
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
     create_params = [
-        ('iterative', '0', (False, None)),
-        ('iterative', '0', (False, None)),
-        ('iterative', '0', (False, None)),
-        ('iterative', '0', (False, None)),
-        ('iterative', '0', (False, None)),
-        ('iterative', '0', (False, None)),
-        ('iterative', '0', (False, None)),
-        ('iterative', '0', (False, None)),
-        ('iterative', '0', (False, None)),
-        ('iterative', '0', (False, None)),
-        ('iterative', '0', (False, None)),
-        ('iterative', '0', (False, None))
+        ('iterative', '0', (True, 0.5))
     ]
     create_bool = [
         1 if i in range(12)
