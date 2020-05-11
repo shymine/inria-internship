@@ -538,15 +538,7 @@ def print_acc(arr):
         str += "{}: {}, \n".format(i[1]['name'], i[1]['test_top1_acc'])
     print(str)
 
-def plot_acc(arr): # arr is the array of metrics
-    print("arr_l: {}".format(len(arr)))
-    fig, axs = plt.subplots(len(arr),1)
-    fig.subplots_adjust(hspace=3)
-    try:
-        axs = list(axs)
-    except TypeError as te:
-        axs = [axs]
-
+def plot_acc(arr):
     def _transform(test_acc):
         max_len = len(test_acc[-1])
         print("max_len: {}".format(max_len))
@@ -562,13 +554,12 @@ def plot_acc(arr): # arr is the array of metrics
             for id, j in enumerate(i):
                 res[id].append(j)
         return res
-
+    figs = []
     for i, m in enumerate(arr):
-        print("axs: {}".format(axs))
-        ax = axs[i]
         acc = m['valid_top1_acc']
         tr = _transform(acc)
-        # print("tr: {}".format(tr))
+        fig, ax = plt.subplots()
+
         ax.set_xlabel('epochs')
         ax.set_ylabel('accuracy')
         ax.set_title('{}\n accuracy: {}'.format(m['name'], m['test_top1_acc']))
@@ -584,6 +575,9 @@ def plot_acc(arr): # arr is the array of metrics
         ax.plot([i for i in range(len(acc))],
                 tr[3],
                 label="final output")
+        figs.append(fig)
     name = time.asctime(time.localtime(time.time())).replace(" ", "_")
-
-    fig.savefig("results/{}.pdf".format(name), dpi=1000)
+    if not os.path.exists("results/{}".format(name)):
+        os.makedirs("results/{}".format(name))
+    for i, fig in enumerate(figs):
+        fig.savefig("results/{}/{}".format(name, i))
