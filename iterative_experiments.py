@@ -18,7 +18,7 @@ def train_model(models_path, cr_params, device, num=0):
     if mode == "0":
         params['epochs'] = 250
         params['milestones'] = [120, 160, 180]
-        params['gammas'] = [0.1, 0.1, 0.1]
+        params['gammas'] = [0.1, 0.1, 0.01]
 
     if mode == "4":
         params['epochs'] = 300
@@ -87,7 +87,7 @@ def main(mode, load):
         arr = [(model, param)]
     else:
         arr = list(multi_experiments(models_path, zip(create_params, create_bool), device))
-    af.print_acc(arr, False)
+    af.print_acc(arr, True)
     af.plot_acc([m[1] for m in arr])
 
 if __name__ == '__main__':
