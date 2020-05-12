@@ -1,7 +1,6 @@
 import copy
 import getopt
 import sys
-import matplotlib.pyplot as plt
 
 import aux_funcs as af
 import network_architectures as arcs
@@ -9,15 +8,15 @@ import network_architectures as arcs
 
 
 def train_model(models_path, cr_params, device, num=0):
-    print("num: {}".format(num))
     type, mode, pruning = cr_params
     model, params = arcs.create_resnet_iterative(models_path, type, mode, pruning, False)
     dataset = af.get_dataset('cifar10')
     params['name'] = params['base_model'] + '_{}_{}'.format(type, mode)
     if model.prune:
         params['name'] += "_prune_{}".format(model.keep_ratio * 100)
+        print("prune: {}".format(model.keep_ratio))
     if mode == "0":
-        params['epochs'] = 200
+        params['epochs'] = 250
         params['milestones'] = [120, 160, 180]
         params['gammas'] = [0.1, 0.1, 0.1]
 
@@ -73,17 +72,14 @@ def main(mode, load):
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
     create_params = [
-        ('iterative', '0', (True, 0.9)),
-        ('iterative', '0', (True, 0.8)),
-        ('iterative', '0', (True, 0.6)),
-        ('iterative', '0', (True, 0.5)),
-        ('iterative', '0', (True, 0.4)),
-        ('iterative', '0', (True, 0.3)),
-        ('iterative', '0', (True, 0.2)),
-        ('iterative', '0', (True, 0.1))
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None)),
     ]
     create_bool = [
-        1 if i in range(12)
+        1 if i in range(5)
         else 0 for i in range(len(create_params))
     ]
     if load is not None:
@@ -91,7 +87,7 @@ def main(mode, load):
         arr = [(model, param)]
     else:
         arr = list(multi_experiments(models_path, zip(create_params, create_bool), device))
-    af.print_acc(arr)
+    af.print_acc(arr, False)
     af.plot_acc([m[1] for m in arr])
 
 if __name__ == '__main__':

@@ -10,6 +10,7 @@ import pickle
 import random
 import sys
 import time
+import statistics
 
 import matplotlib
 import numpy as np
@@ -532,37 +533,46 @@ def format_outputs(outputs):
     return res
 
 
-def print_acc(arr):
+def print_acc(arr, extend=False):
     str = "accuracies:\n"
     for i in arr:
         str += "{}: {}, \n".format(i[1]['name'], i[1]['test_top1_acc'])
     print(str)
+    if extend:
+        acc = [i[1]['test_top1_acc'] for i in arr]
+        tr = reverse(acc)
+        means = [statistics.mean(i) for i in tr]
+        stds = [statistics.stdev(i) for i in tr]
+        print("means: {}".format(means))
+        print("stds: {}".format(stds))
+        print("std%: {}".format([100*std/mean for std, mean in zip(stds, means)]))
+
+def reverse(test_acc):
+    max_len = len(test_acc[-1])
+    tmp = []
+    for i in test_acc:
+        if len(i) < max_len:
+            a = [i[ind] if ind < len(i) else 0 for ind in range(max_len)]
+        else:
+            a = copy.deepcopy(i)
+        tmp.append(a)
+    res = [[] for _ in tmp[0]]
+    for i in tmp:
+        for id, j in enumerate(i):
+            res[id].append(j)
+    return res
 
 def plot_acc(arr):
-    def _transform(test_acc):
-        max_len = len(test_acc[-1])
-        print("max_len: {}".format(max_len))
-        tmp = []
-        for i in test_acc:
-            if len(i) < max_len:
-                a = [i[ind] if ind < len(i) else 0 for ind in range(max_len)]
-            else:
-                a = copy.deepcopy(i)
-            tmp.append(a)
-        res = [[] for _ in tmp[0]]
-        for i in tmp:
-            for id, j in enumerate(i):
-                res[id].append(j)
-        return res
+
     figs = []
     for i, m in enumerate(arr):
         acc = m['valid_top1_acc']
-        tr = _transform(acc)
+        tr = reverse(acc)
         fig, ax = plt.subplots()
 
         ax.set_xlabel('epochs')
         ax.set_ylabel('accuracy')
-        name = "_".join(m['name'].split('_')[3:]) + "_milestones{}_{}".format(m['milestones'], m['gammas'])
+        name = "_".join(m['name'].split('_')[3:]) + "\nmilestones{}_{}".format(m['milestones'], m['gammas'])
         ax.set_title('{}\n accuracy: {}'.format(name, m['test_top1_acc']))
         ax.plot([i for i in range(len(acc))],
                 tr[0],

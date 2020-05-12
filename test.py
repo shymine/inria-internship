@@ -34,7 +34,7 @@ def main():
         )
     ]
 
-    af.plot_acc(metrics)
+    af.print_acc([(None, i) for i in metrics], True)
 
 if __name__ == '__main__':
     main()
