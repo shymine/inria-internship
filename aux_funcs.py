@@ -4,6 +4,7 @@
 
 import copy
 import itertools as it
+import math
 import os
 import os.path
 import pickle
@@ -538,6 +539,8 @@ def print_acc(arr, extend=False):
     for i in arr:
         str += "{}: {}, \n".format(i[1]['name'], i[1]['test_top1_acc'])
     print(str)
+    def mean(arr):
+        return math.fsum(arr)/len(arr)
     if extend:
         acc = [i[1]['test_top1_acc'] for i in arr]
         tr = reverse(acc)
