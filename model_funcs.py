@@ -444,6 +444,7 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
         print("first pruning")
         loader = get_loader(data, False)
         count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, 0, device)
+        #prune2(model, model.keep_ratio, loader,sdn_loss, device)
 
     best_model, accuracies, best_epoch = None, None, 0
     for epoch in range(1, epochs + 1):
@@ -458,6 +459,7 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
             if model.prune:
                 loader = get_loader(data, False)
                 count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
+                #prune2(model, model.keep_ratio, loader, sdn_loss, device)
 
         if model.num_output == model.num_ics + 1:
             print("best model evaluation: {}/{}".format(metrics['valid_top1_acc'][-1], accuracies))
@@ -801,3 +803,7 @@ def prune(model, keep_ratio, loader, loss, count_pruned, device):
     masks, cur_pruned = snip.snip_skip_layers(model, keep_ratio, loader, loss, device)
     snip.apply_prune_mask_skip_layers(model, masks, count_pruned)
     return cur_pruned
+
+def prune2(layers, keep_ratio, loader, loss, device):
+    masks = snip.snip(layers, keep_ratio, loader, loss, device)
+    snip.apply_prune_mask(layers, masks)
