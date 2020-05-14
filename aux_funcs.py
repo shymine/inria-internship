@@ -539,12 +539,12 @@ def print_acc(arr, extend=False):
     for i in arr:
         str += "{}: {}, \n".format(i[1]['name'], i[1]['test_top1_acc'])
     print(str)
-    def mean(arr):
+    def mean_(arr):
         return math.fsum(arr)/len(arr)
     if extend:
         acc = [i[1]['test_top1_acc'] for i in arr]
         tr = reverse(acc)
-        means = [statistics.mean(i) for i in tr]
+        means = [mean_(i) for i in tr]
         stds = [statistics.stdev(i) for i in tr]
         print("means: {}".format(means))
         print("stds: {}".format(stds))
