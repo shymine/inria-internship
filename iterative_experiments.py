@@ -34,7 +34,9 @@ def train_model(models_path, cr_params, device, num=0):
 
     model.to(device)
     optimizer, scheduler = af.get_full_optimizer(model, opti_param, lr_schedule_params)
-    metrics, best_model = model.train_func(model, dataset, params['epochs'], optimizer, scheduler, device)
+    metrics, best_model = model.train_func(model, dataset,
+                                           (params['epochs'], [25, 50, 75], [25, 50, 75]),
+                                           optimizer, scheduler, device)
     _link_metrics(params, metrics)
 
     arcs.save_model(best_model, params, models_path, params['name'], epoch=-1)
