@@ -11,7 +11,7 @@ import torch.nn as nn
 import aux_funcs as af
 import data
 import snip
-
+from GPUtil import showUtilization as gpu_usage
 
 def sdn_training_step(optimizer, model, coeffs, batch, device):
     b_x = batch[0].to(device)
@@ -418,7 +418,7 @@ def cnn_get_confidence(model, loader, device='cpu'):
 
 
 # default training
-def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
+def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
     print("iter training 0")
     augment = model.augment_training
     metrics = {
@@ -431,7 +431,8 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
         'test_top3_acc': [],
         'lrs': []
     }
-    epoch_growth = [25, 50, 75]  # [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
+    epochs, epoch_growth, epoch_prune = params
+    #epoch_growth = [25, 50, 75]  # [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
     print("array params: num_ics {}, epochs {}".format(model.num_ics, epochs))
     print("epochs growth: {}".format(epoch_growth))
 
@@ -455,11 +456,11 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
             model.to(device)
             optimizer.add_param_group({'params': grown_layers})
             print("model grow")
-            print("pruning?: {}".format(model.prune))
-            if model.prune:
-                loader = get_loader(data, False)
-                count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
-                #prune2(model, model.keep_ratio, loader, sdn_loss, device)
+
+        if epoch in epoch_prune and model.prune:
+            loader = get_loader(data, False)
+            count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
+            #prune2(model, model.keep_ratio, loader, sdn_loss, device)
 
         if model.num_output == model.num_ics + 1:
             print("best model evaluation: {}/{}".format(metrics['valid_top1_acc'][-1], accuracies))
@@ -471,6 +472,8 @@ def iter_training_0(model, data, epochs, optimizer, scheduler, device='cpu'):
                 best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
                 best_epoch = epoch
                 print("New best model: {}".format(accuracies))
+
+        print(gpu_usage())
 
     metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(best_model, data.test_loader, device)
     test_top1, test_top3 = sdn_test(model, data.test_loader, device)

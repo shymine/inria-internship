@@ -72,14 +72,44 @@ def main(mode, load):
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
     create_params = [
+        ('iterative', '0', (True, 0.9)),
+        ('iterative', '0', (True, 0.9)),
+        ('iterative', '0', (True, 0.9)),
+        ('iterative', '0', (True, 0.9)),
+        ('iterative', '0', (True, 0.9)),
+
+        ('iterative', '0', (True, 0.8)),
+        ('iterative', '0', (True, 0.8)),
+        ('iterative', '0', (True, 0.8)),
+        ('iterative', '0', (True, 0.8)),
+        ('iterative', '0', (True, 0.8)),
+
         ('iterative', '0', (True, 0.6)),
         ('iterative', '0', (True, 0.6)),
         ('iterative', '0', (True, 0.6)),
         ('iterative', '0', (True, 0.6)),
         ('iterative', '0', (True, 0.6)),
+
+        ('iterative', '0', (True, 0.4)),
+        ('iterative', '0', (True, 0.4)),
+        ('iterative', '0', (True, 0.4)),
+        ('iterative', '0', (True, 0.4)),
+        ('iterative', '0', (True, 0.4)),
+
+        ('iterative', '0', (True, 0.3)),
+        ('iterative', '0', (True, 0.3)),
+        ('iterative', '0', (True, 0.3)),
+        ('iterative', '0', (True, 0.3)),
+        ('iterative', '0', (True, 0.3)),
+
+        ('iterative', '0', (True, 0.2)),
+        ('iterative', '0', (True, 0.2)),
+        ('iterative', '0', (True, 0.2)),
+        ('iterative', '0', (True, 0.2)),
+        ('iterative', '0', (True, 0.2))
     ]
     create_bool = [
-        1 if i in range(5)
+        1 if True
         else 0 for i in range(len(create_params))
     ]
     if load is not None:
@@ -87,7 +117,7 @@ def main(mode, load):
         arr = [(model, param)]
     else:
         arr = list(multi_experiments(models_path, zip(create_params, create_bool), device))
-    af.print_acc(arr, True)
+    af.print_acc(arr, groups=[5, 5, 5, 5, 5, 5], extend=True)
     af.plot_acc([m[1] for m in arr])
 
 if __name__ == '__main__':

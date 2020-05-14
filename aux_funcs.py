@@ -534,7 +534,7 @@ def format_outputs(outputs):
     return res
 
 
-def print_acc(arr, extend=False):
+def print_acc(arr, groups=None, extend=False):
     str = "accuracies:\n"
     for i in arr:
         str += "{}: {}, \n".format(i[1]['name'], i[1]['test_top1_acc'])
@@ -543,12 +543,23 @@ def print_acc(arr, extend=False):
         return math.fsum(arr)/len(arr)
     if extend:
         acc = [i[1]['test_top1_acc'] for i in arr]
-        tr = reverse(acc)
-        means = [mean_(i) for i in tr]
-        stds = [statistics.stdev(i) for i in tr]
-        print("means: {}".format(means))
-        print("stds: {}".format(stds))
-        print("std%: {}".format([100*std/mean for std, mean in zip(stds, means)]))
+        if groups is None:
+            tr = reverse(acc)
+            means = [mean_(i) for i in tr]
+            stds = [statistics.stdev(i) for i in tr]
+            print("means: {}".format(means))
+            print("stds: {}".format(stds))
+            print("std%: {}".format([100*std/mean for std, mean in zip(stds, means)]))
+        else: # groups=[2,2,2]
+            groups_cum = [0] + [sum(groups[:i+1]) for i in range(len(groups))]
+            for i in range(len(groups)):
+                group_acc = acc[groups_cum[i]:groups_cum[i+1]]
+                tr = reverse(group_acc)
+                means = [mean_(i) for i in tr]
+                stds = [statistics.stdev(i) for i in tr]
+                print("{} means: {}".format(i, means))
+                print("{} stds: {}".format(i, stds))
+                print("{} std%: {}".format(i, [100 * std / mean for std, mean in zip(stds, means)]))
 
 def reverse(test_acc):
     max_len = len(test_acc[-1])
