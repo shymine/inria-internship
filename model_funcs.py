@@ -68,7 +68,7 @@ def sdn_train(model, data, params, optimizer, scheduler, device='cpu'):
     metrics = {'epoch_times': [], 'test_top1_acc': [], 'test_top3_acc': [], 'train_top1_acc': [], 'train_top3_acc': [],
                'lrs': []}
     max_coeffs = np.array([0.15, 0.3, 0.45, 0.6, 0.75, 0.9])  # max tau_i --- C_i values
-    epochs, _, _ = params
+    epochs = params['epochs']
     if model.ic_only:
         print('sdn will be converted from a pre-trained CNN...  (The IC-only training)')
     else:
@@ -407,7 +407,9 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
         'test_top3_acc': [],
         'lrs': []
     }
-    epochs, epoch_growth, epoch_prune = params
+    epochs, epoch_growth, epoch_prune = params['epochs'], params['epoch_growth'], params['epoch_prune']
+    pruning_batch_size = params['prune_batch_size']
+
     #epoch_growth = [25, 50, 75]  # [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
     print("array params: num_ics {}, epochs {}".format(model.num_ics, epochs))
     print("epochs growth: {}".format(epoch_growth))
@@ -417,15 +419,17 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
     model.to(device)
     model.to_train()
 
+    # if model.prune:
+    #     print("first pruning")
+    #     loader = get_loader(data, False)
+    #     count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, 0, device)
+    #     prune2(model, model.keep_ratio, loader,sdn_loss, device)
     if model.prune:
-        print("first pruning")
-        loader = get_loader(data, False)
-        count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, 0, device)
-        #prune2(model, model.keep_ratio, loader,sdn_loss, device)
+        prune_dataset = af.get_dataset('cifar10', batch_size=pruning_batch_size)
 
     best_model, accuracies, best_epoch = None, None, 0
+    count_pruned = 0
     for epoch in range(1, epochs + 1):
-        epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
 
         if epoch in epoch_growth:
             grown_layers = model.grow()
@@ -434,9 +438,11 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
             print("model grow")
 
         if epoch in epoch_prune and model.prune:
-            loader = get_loader(data, False)
+            loader = get_loader(prune_dataset, False)
             count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
             #prune2(model, model.keep_ratio, loader, sdn_loss, device)
+
+        epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
 
         if model.num_output == model.num_ics + 1:
             print("best model evaluation: {}/{}".format(metrics['valid_top1_acc'][-1], accuracies))

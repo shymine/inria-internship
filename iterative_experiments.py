@@ -16,9 +16,9 @@ def train_model(models_path, cr_params, device, num=0):
         params['name'] += "_prune_{}".format(model.keep_ratio * 100)
         print("prune: {}".format(model.keep_ratio))
     if mode == "0":
-        params['epochs'] = 300
+        params['epochs'] = 200
         params['milestones'] = [100, 133, 166]
-        params['gammas'] = [0.1, 0.1, 0.1]
+        params['gammas'] = [0.1, 0.01, 0.01]
 
     if mode == "4":
         params['epochs'] = 300
@@ -33,9 +33,15 @@ def train_model(models_path, cr_params, device, num=0):
     lr_schedule_params = (params['milestones'], params['gammas'])
 
     model.to(device)
+    train_params = dict(
+        epochs=params['epochs'],
+        epoch_growth=[25, 50, 75],
+        epoch_prune=[0, 25, 50, 75],
+        prune_batch_size=pruning[3]
+    )
     optimizer, scheduler = af.get_full_optimizer(model, opti_param, lr_schedule_params)
     metrics, best_model = model.train_func(model, dataset,
-                                           (params['epochs'], [25, 50, 75], [25, 50, 75]),
+                                           train_params,
                                            optimizer, scheduler, device)
     _link_metrics(params, metrics)
 
@@ -74,11 +80,11 @@ def main(mode, load):
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
     create_params = [
-        ('full_ic', '0', (True, 0.8)),
-        ('full_ic', '0', (True, 0.6)),
-        ('full_ic', '0', (True, 0.5)),
-        ('full_ic', '0', (True, 0.3)),
-        ('full_ic', '0', (True, 0.1))
+        ('iterative', '0', (True, 0.5, 128)),
+        ('iterative', '0', (True, 0.5, 128*2)),
+        ('iterative', '0', (True, 0.5, 128*3)),
+        ('iterative', '0', (True, 0.5, 128*4)),
+        ('iterative', '0', (True, 0.5, 128*5))
     ]
     create_bool = [
         1 if True

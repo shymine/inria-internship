@@ -101,6 +101,7 @@ def snip_skip_layers(model, keep_ratio, loader, loss, device='cpu'):
 
     _model.to(device)
     _model.zero_grad()
+    print("shape of input: {}".format(inputs.shape))
     outputs = _model(inputs)
     total_loss = loss(outputs, targets)
     total_loss.backward()

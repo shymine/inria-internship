@@ -154,7 +154,7 @@ def create_mobilenet(models_path, task, save_type, get_params=False):
     return save_networks(model_name, model_params, models_path, save_type)
 
 
-def create_resnet_iterative(models_path, type="full", mode=None, prune=(False, 0.5), return_name=True):
+def create_resnet_iterative(models_path, type="full", mode=None, prune=(False, 0.5, 128), return_name=True):
     print('Creating Resnet for iterative training for cifar10')
     model_params = get_task_params('cifar10')
     model_name = '{}_resnet_iterative'.format('cifar10')
@@ -180,7 +180,7 @@ def create_resnet_iterative(models_path, type="full", mode=None, prune=(False, 0
         model_params['mode'] = mode
     model_params['size'] = 9
     model_params['ics'] = [0, 0, 1, 0, 0, 1, 0, 1, 0]
-    model_params['prune'], model_params['keep_ratio'] = prune
+    model_params['prune'], model_params['keep_ratio'], _ = prune
 
     model = ResNet_Baseline(model_params)
 
