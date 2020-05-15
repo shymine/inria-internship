@@ -37,7 +37,7 @@ def train_model(models_path, cr_params, device, num=0):
         epochs=params['epochs'],
         epoch_growth=[25, 50, 75],
         epoch_prune=[0, 25, 50, 75],
-        prune_batch_size=pruning[3]
+        prune_batch_size=pruning[2]
     )
     optimizer, scheduler = af.get_full_optimizer(model, opti_param, lr_schedule_params)
     metrics, best_model = model.train_func(model, dataset,
