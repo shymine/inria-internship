@@ -537,7 +537,7 @@ def format_outputs(outputs):
 def print_acc(arr, groups=None, extend=False):
     str = "accuracies:\n"
     for i in arr:
-        str += "{}: {}, \n".format(i[1]['name'], i[1]['test_top1_acc'])
+        str += "{}: {}, {},\n".format(i[1]['name'], i[1]['test_top1_acc'], i[1]['best_model_epoch'])
     print(str)
     def mean_(arr):
         return math.fsum(arr)/len(arr)
@@ -583,7 +583,7 @@ def plot_acc(arr):
         acc = m['valid_top1_acc']
         tr = reverse(acc)
         fig, ax = plt.subplots()
-
+        ax.text(m['epoch']-30, 30, "best model epoch: {}".format(m['best_model_epoch']))
         ax.set_xlabel('epochs')
         ax.set_ylabel('accuracy')
         name = "_".join(m['name'].split('_')[3:]) + "\nmilestones{}_{}".format(m['milestones'], m['gammas'])

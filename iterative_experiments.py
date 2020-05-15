@@ -74,24 +74,6 @@ def main(mode, load):
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
     create_params = [
-        ('iterative', '0', (True, 0.9)),
-        ('iterative', '0', (True, 0.9)),
-        ('iterative', '0', (True, 0.9)),
-        ('iterative', '0', (True, 0.9)),
-        ('iterative', '0', (True, 0.9)),
-
-        ('iterative', '0', (True, 0.8)),
-        ('iterative', '0', (True, 0.8)),
-        ('iterative', '0', (True, 0.8)),
-        ('iterative', '0', (True, 0.8)),
-        ('iterative', '0', (True, 0.8)),
-
-        ('iterative', '0', (True, 0.6)),
-        ('iterative', '0', (True, 0.6)),
-        ('iterative', '0', (True, 0.6)),
-        ('iterative', '0', (True, 0.6)),
-        ('iterative', '0', (True, 0.6)),
-
         ('iterative', '0', (True, 0.4)),
         ('iterative', '0', (True, 0.4)),
         ('iterative', '0', (True, 0.4)),

@@ -477,6 +477,7 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
 
     metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(best_model, data.test_loader, device)
     test_top1, test_top3 = sdn_test(model, data.test_loader, device)
+    metrics['best_model_epoch'] = best_epoch
     print("best epoch: {}".format(best_epoch))
     print("comparison best and latest: {}/{}".format(metrics['test_top1_acc'], test_top1))
     return metrics, best_model
