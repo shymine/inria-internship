@@ -62,64 +62,40 @@ def get_loader(data, augment):
     return train_loader
 
 
-def sdn_train(model, data, epochs, optimizer, scheduler, device='cpu'):
+def sdn_train(model, data, params, optimizer, scheduler, device='cpu'):
     augment = model.augment_training
     print("sdn training")
     metrics = {'epoch_times': [], 'test_top1_acc': [], 'test_top3_acc': [], 'train_top1_acc': [], 'train_top3_acc': [],
                'lrs': []}
     max_coeffs = np.array([0.15, 0.3, 0.45, 0.6, 0.75, 0.9])  # max tau_i --- C_i values
-
+    epochs, _, _ = params
     if model.ic_only:
         print('sdn will be converted from a pre-trained CNN...  (The IC-only training)')
     else:
         print('sdn will be trained from scratch...(The SDN training)')
 
+    if model.prune:
+        loader = get_loader(data, False)
+        prune2(model, model.keep_ratio, loader, sdn_loss, device)
+    best_model, accuracies, best_epoch = None, None, 0
     for epoch in range(1, epochs + 1):
-        scheduler.step()
-        cur_lr = af.get_lr(optimizer)
-        print('\nEpoch: {}/{}'.format(epoch, epochs))
-        print('Cur lr: {}'.format(cur_lr))
+        epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
 
-        if model.ic_only is False:
-            # calculate the IC coeffs for this epoch for the weighted objective function
-            cur_coeffs = 0.01 + epoch * (max_coeffs / epochs)  # to calculate the tau at the currect epoch
-            cur_coeffs = np.minimum(max_coeffs, cur_coeffs)
-            print('Cur coeffs: {}'.format(cur_coeffs))
-
-        start_time = time.time()
-        model.train()
-        loader = get_loader(data, augment)
-        for i, batch in enumerate(loader):
-            if model.ic_only is False:
-                total_loss = sdn_training_step(optimizer, model, cur_coeffs, batch, device)
-            else:
-                total_loss = sdn_ic_only_step(optimizer, model, batch, device)
-
-            if i % 100 == 0:
-                print('Loss: {}: '.format(total_loss))
-
-        top1_test, top3_test = sdn_test(model, data.test_loader, device)
-
-        print('Top1 Test accuracies: {}'.format(top1_test))
-        print('Top3 Test accuracies: {}'.format(top3_test))
-        end_time = time.time()
-
-        metrics['test_top1_acc'].append(top1_test)
-        metrics['test_top3_acc'].append(top3_test)
-
-        top1_train, top3_train = sdn_test(model, get_loader(data, augment), device)
-        print('Top1 Train accuracies: {}'.format(top1_train))
-        print('Top3 Train accuracies: {}'.format(top3_train))
-        metrics['train_top1_acc'].append(top1_train)
-        metrics['train_top3_acc'].append(top3_train)
-
-        epoch_time = int(end_time - start_time)
-        metrics['epoch_times'].append(epoch_time)
-        print('Epoch took {} seconds.'.format(epoch_time))
-
-        metrics['lrs'].append(cur_lr)
-
-    return metrics
+        print("best model evaluation: {}/{}".format(metrics['valid_top1_acc'][-1], accuracies))
+        if best_model is None:
+            best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
+            best_epoch = epoch
+            print("Begin best_model: {}".format(accuracies))
+        elif sum(metrics['valid_top1_acc'][-1]) > sum(accuracies):
+            best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
+            best_epoch = epoch
+            print("New best model: {}".format(accuracies))
+    metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(best_model, data.test_loader, device)
+    test_top1, test_top3 = sdn_test(model, data.test_loader, device)
+    metrics['best_model_epoch'] = best_epoch
+    print("best epoch: {}".format(best_epoch))
+    print("comparison best and latest: {}/{}".format(metrics['test_top1_acc'], test_top1))
+    return metrics, best_model
 
 
 def sdn_test(model, loader, device='cpu'):
