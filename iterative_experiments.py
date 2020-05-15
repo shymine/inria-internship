@@ -16,7 +16,7 @@ def train_model(models_path, cr_params, device, num=0):
         params['name'] += "_prune_{}".format(model.keep_ratio * 100)
         print("prune: {}".format(model.keep_ratio))
     if mode == "0":
-        params['epochs'] = 200
+        params['epochs'] = 300
         params['milestones'] = [100, 133, 166]
         params['gammas'] = [0.1, 0.1, 0.1]
 
