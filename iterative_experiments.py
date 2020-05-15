@@ -18,7 +18,7 @@ def train_model(models_path, cr_params, device, num=0):
     if mode == "0":
         params['epochs'] = 200
         params['milestones'] = [100, 133, 166]
-        params['gammas'] = [0.1, 0.01, 0.01]
+        params['gammas'] = [0.1, 0.1, 0.1]
 
     if mode == "4":
         params['epochs'] = 300
@@ -74,23 +74,11 @@ def main(mode, load):
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
     create_params = [
-        ('iterative', '0', (True, 0.4)),
-        ('iterative', '0', (True, 0.4)),
-        ('iterative', '0', (True, 0.4)),
-        ('iterative', '0', (True, 0.4)),
-        ('iterative', '0', (True, 0.4)),
-
-        ('iterative', '0', (True, 0.3)),
-        ('iterative', '0', (True, 0.3)),
-        ('iterative', '0', (True, 0.3)),
-        ('iterative', '0', (True, 0.3)),
-        ('iterative', '0', (True, 0.3)),
-
-        ('iterative', '0', (True, 0.2)),
-        ('iterative', '0', (True, 0.2)),
-        ('iterative', '0', (True, 0.2)),
-        ('iterative', '0', (True, 0.2)),
-        ('iterative', '0', (True, 0.2))
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None)),
+        ('iterative', '0', (False, None))
     ]
     create_bool = [
         1 if True
@@ -101,7 +89,8 @@ def main(mode, load):
         arr = [(model, param)]
     else:
         arr = list(multi_experiments(models_path, zip(create_params, create_bool), device))
-    af.print_acc(arr, groups=[5, 5, 5, 5, 5, 5], extend=True)
+    #af.print_acc(arr, groups=[5, 5, 5, 5, 5, 5], extend=True)
+    af.print_acc(arr, extend=True)
     af.plot_acc([m[1] for m in arr])
 
 if __name__ == '__main__':
