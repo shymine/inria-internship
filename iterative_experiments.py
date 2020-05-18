@@ -18,7 +18,7 @@ def train_model(models_path, cr_params, device, num=0):
     if mode == "0":
         params['epochs'] = 200
         params['milestones'] = [100, 133, 166]
-        params['gammas'] = [0.1, 0.01, 0.001]
+        params['gammas'] = [0.1, 0.01, 0.01]
 
     if mode == "4":
         params['epochs'] = 300
