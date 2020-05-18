@@ -18,7 +18,7 @@ def train_model(models_path, cr_params, device, num=0):
     if mode == "0":
         params['epochs'] = 200
         params['milestones'] = [100, 133, 166]
-        params['gammas'] = [0.1, 0.01, 0.01]
+        params['gammas'] = [0.1, 0.01, 0.001]
 
     if mode == "4":
         params['epochs'] = 300
@@ -39,6 +39,7 @@ def train_model(models_path, cr_params, device, num=0):
         epoch_prune=[0, 25, 50, 75],
         prune_batch_size=pruning[2]
     )
+    print("batch_size: {}".format(train_params['prune_batch_size']))
     optimizer, scheduler = af.get_full_optimizer(model, opti_param, lr_schedule_params)
     metrics, best_model = model.train_func(model, dataset,
                                            train_params,
@@ -73,6 +74,7 @@ def _link_metrics(params, metrics):
     params['valid_top3_acc'] = metrics['valid_top3_acc']
     params['epoch_times'] = metrics['epoch_times']
     params['lrs'] = metrics['lrs']
+    params['best_model_epoch'] = metrics['best_model_epoch']
 
 
 def main(mode, load):
@@ -80,35 +82,11 @@ def main(mode, load):
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
     create_params = [
-        ('iterative', '0', (True, 0.5, 128)),
-        ('iterative', '0', (True, 0.5, 128)),
-        ('iterative', '0', (True, 0.5, 128)),
-        ('iterative', '0', (True, 0.5, 128)),
-        ('iterative', '0', (True, 0.5, 128)),
-
-        ('iterative', '0', (True, 0.5, 128 * 2)),
-        ('iterative', '0', (True, 0.5, 128 * 2)),
-        ('iterative', '0', (True, 0.5, 128 * 2)),
-        ('iterative', '0', (True, 0.5, 128 * 2)),
-        ('iterative', '0', (True, 0.5, 128 * 2)),
-
-        ('iterative', '0', (True, 0.5, 128 * 3)),
-        ('iterative', '0', (True, 0.5, 128 * 3)),
-        ('iterative', '0', (True, 0.5, 128 * 3)),
-        ('iterative', '0', (True, 0.5, 128 * 3)),
-        ('iterative', '0', (True, 0.5, 128 * 3)),
-
-        ('iterative', '0', (True, 0.5, 128*4)),
-        ('iterative', '0', (True, 0.5, 128 * 4)),
-        ('iterative', '0', (True, 0.5, 128 * 4)),
-        ('iterative', '0', (True, 0.5, 128 * 4)),
-        ('iterative', '0', (True, 0.5, 128 * 4)),
-
-        ('iterative', '0', (True, 0.5, 128*5)),
-        ('iterative', '0', (True, 0.5, 128 * 5)),
-        ('iterative', '0', (True, 0.5, 128 * 5)),
-        ('iterative', '0', (True, 0.5, 128 * 5)),
-        ('iterative', '0', (True, 0.5, 128 * 5))
+        ('iterative', '0', (False, None, None)),
+        ('iterative', '0', (False, None, None)),
+        ('iterative', '0', (False, None, None)),
+        ('iterative', '0', (False, None, None)),
+        ('iterative', '0', (False, None, None))
     ]
     create_bool = [
         1 if True
@@ -119,7 +97,7 @@ def main(mode, load):
         arr = [(model, param)]
     else:
         arr = list(multi_experiments(models_path, zip(create_params, create_bool), device))
-    af.print_acc(arr, groups=[5, 5, 5, 5, 5], extend=True)
+    af.print_acc(arr, groups=[5], extend=True)
     #af.print_acc(arr, extend=False)
     af.plot_acc([m[1] for m in arr])
 

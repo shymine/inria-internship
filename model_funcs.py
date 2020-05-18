@@ -65,7 +65,13 @@ def get_loader(data, augment):
 def sdn_train(model, data, params, optimizer, scheduler, device='cpu'):
     augment = model.augment_training
     print("sdn training")
-    metrics = {'epoch_times': [], 'test_top1_acc': [], 'test_top3_acc': [], 'train_top1_acc': [], 'train_top3_acc': [],
+    metrics = {'epoch_times': [],
+               'valid_top1_acc': [],
+               'valid_top3_acc': [],
+               'test_top1_acc': [],
+               'test_top3_acc': [],
+               'train_top1_acc': [],
+               'train_top3_acc': [],
                'lrs': []}
     max_coeffs = np.array([0.15, 0.3, 0.45, 0.6, 0.75, 0.9])  # max tau_i --- C_i values
     epochs = params['epochs']
