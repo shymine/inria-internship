@@ -18,7 +18,7 @@ def train_model(models_path, cr_params, device, num=0):
     if mode == "0":
         params['epochs'] = 250
         params['milestones'] = [120, 160, 180]
-        params['gammas'] = [0.1, 0.01, 0.1]
+        params['gammas'] = [0.1, 0.01, 0.01]
 
     if mode == "4":
         params['epochs'] = 300
@@ -82,11 +82,59 @@ def main(mode, load):
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
     create_params = [
-        ('iterative', '0', (False, None, None)),
-        ('iterative', '0', (False, None, None)),
-        ('iterative', '0', (False, None, None)),
-        ('iterative', '0', (False, None, None)),
-        ('iterative', '0', (False, None, None))
+        ('iterative', '0', (True, 0.9, 128)),
+        ('iterative', '0', (True, 0.9, 128)),
+        ('iterative', '0', (True, 0.9, 128)),
+        ('iterative', '0', (True, 0.9, 128)),
+        ('iterative', '0', (True, 0.9, 128)),
+
+        ('iterative', '0', (True, 0.8, 128)),
+        ('iterative', '0', (True, 0.8, 128)),
+        ('iterative', '0', (True, 0.8, 128)),
+        ('iterative', '0', (True, 0.8, 128)),
+        ('iterative', '0', (True, 0.8, 128)),
+
+        ('iterative', '0', (True, 0.7, 128)),
+        ('iterative', '0', (True, 0.7, 128)),
+        ('iterative', '0', (True, 0.7, 128)),
+        ('iterative', '0', (True, 0.7, 128)),
+        ('iterative', '0', (True, 0.7, 128)),
+
+        ('iterative', '0', (True, 0.6, 128)),
+        ('iterative', '0', (True, 0.6, 128)),
+        ('iterative', '0', (True, 0.6, 128)),
+        ('iterative', '0', (True, 0.6, 128)),
+        ('iterative', '0', (True, 0.6, 128)),
+
+        ('iterative', '0', (True, 0.5, 128)),
+        ('iterative', '0', (True, 0.5, 128)),
+        ('iterative', '0', (True, 0.5, 128)),
+        ('iterative', '0', (True, 0.5, 128)),
+        ('iterative', '0', (True, 0.5, 128)),
+
+        ('iterative', '0', (True, 0.4, 128)),
+        ('iterative', '0', (True, 0.4, 128)),
+        ('iterative', '0', (True, 0.4, 128)),
+        ('iterative', '0', (True, 0.4, 128)),
+        ('iterative', '0', (True, 0.4, 128)),
+
+        ('iterative', '0', (True, 0.3, 128)),
+        ('iterative', '0', (True, 0.3, 128)),
+        ('iterative', '0', (True, 0.3, 128)),
+        ('iterative', '0', (True, 0.3, 128)),
+        ('iterative', '0', (True, 0.3, 128)),
+
+        ('iterative', '0', (True, 0.2, 128)),
+        ('iterative', '0', (True, 0.2, 128)),
+        ('iterative', '0', (True, 0.2, 128)),
+        ('iterative', '0', (True, 0.2, 128)),
+        ('iterative', '0', (True, 0.2, 128)),
+
+        ('iterative', '0', (True, 0.1, 128)),
+        ('iterative', '0', (True, 0.1, 128)),
+        ('iterative', '0', (True, 0.1, 128)),
+        ('iterative', '0', (True, 0.1, 128)),
+        ('iterative', '0', (True, 0.1, 128)),
     ]
     create_bool = [
         1 if True
@@ -97,7 +145,7 @@ def main(mode, load):
         arr = [(model, param)]
     else:
         arr = list(multi_experiments(models_path, zip(create_params, create_bool), device))
-    af.print_acc(arr, groups=[5], extend=True)
+    af.print_acc(arr, groups=[5,5,5,5,5,5,5,5,5], extend=True)
     #af.print_acc(arr, extend=False)
     af.plot_acc([m[1] for m in arr])
 

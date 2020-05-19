@@ -555,8 +555,8 @@ def print_acc(arr, groups=None, extend=False):
             for i in range(len(groups)):
                 group_acc = acc[groups_cum[i]:groups_cum[i+1]]
                 tr = reverse(group_acc)
-                means = [mean_(i) for i in tr]
-                stds = [statistics.stdev(i) for i in tr]
+                means = [statistics.mean([float(j) for j in i]) for i in tr]
+                stds = [statistics.stdev([float(j) for j in i]) for i in tr]
                 print("{} means: {}".format(i, means))
                 print("{} stds: {}".format(i, stds))
                 print("{} std%: {}".format(i, [100 * std / mean for std, mean in zip(stds, means)]))
