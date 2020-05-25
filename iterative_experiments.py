@@ -131,7 +131,7 @@ def main(mode, load):
         arr = [(model, param)]
     else:
         arr = list(multi_experiments(models_path, zip(create_params, create_bool), device))
-    af.print_acc(arr, groups=[5,5,5], extend=True)
+    af.print_acc(arr, groups=[3,5,5,5,5,5,5], extend=True)
     #af.print_acc(arr, extend=False)
     af.plot_acc([m[1] for m in arr])
 
