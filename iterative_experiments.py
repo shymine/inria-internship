@@ -36,7 +36,7 @@ def train_model(models_path, cr_params, device, num=0):
     train_params = dict(
         epochs=params['epochs'],
         epoch_growth=[25, 50, 75],
-        epoch_prune=[0, 25, 50, 75],
+        epoch_prune=[1, 25, 50, 75],
         prune_batch_size=pruning[2]
     )
     print("batch_size: {}".format(train_params['prune_batch_size']))
@@ -82,23 +82,45 @@ def main(mode, load):
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
     create_params = [
-        ('iterative', '0', (True, 0.5, 128*2)),
-        ('iterative', '0', (True, 0.5, 128*2)),
-        ('iterative', '0', (True, 0.5, 128*2)),
-        ('iterative', '0', (True, 0.5, 128*2)),
-        ('iterative', '0', (True, 0.5, 128*2)),
+        ('iterative', '0', (True, 0.7, 128)),
+        ('iterative', '0', (True, 0.7, 128)),
+        ('iterative', '0', (True, 0.7, 128)),
 
-        ('iterative', '0', (True, 0.5, 128*3)),
-        ('iterative', '0', (True, 0.5, 128*3)),
-        ('iterative', '0', (True, 0.5, 128*3)),
-        ('iterative', '0', (True, 0.5, 128*3)),
-        ('iterative', '0', (True, 0.5, 128*3)),
+        ('iterative', '0', (True, 0.6, 128)),
+        ('iterative', '0', (True, 0.6, 128)),
+        ('iterative', '0', (True, 0.6, 128)),
+        ('iterative', '0', (True, 0.6, 128)),
+        ('iterative', '0', (True, 0.6, 128)),
 
-        ('iterative', '0', (True, 0.5, 128*4)),
-        ('iterative', '0', (True, 0.5, 128*4)),
-        ('iterative', '0', (True, 0.5, 128*4)),
-        ('iterative', '0', (True, 0.5, 128*4)),
-        ('iterative', '0', (True, 0.5, 128*4)),
+        ('iterative', '0', (True, 0.5, 128)),
+        ('iterative', '0', (True, 0.5, 128)),
+        ('iterative', '0', (True, 0.5, 128)),
+        ('iterative', '0', (True, 0.5, 128)),
+        ('iterative', '0', (True, 0.5, 128)),
+
+        ('iterative', '0', (True, 0.4, 128)),
+        ('iterative', '0', (True, 0.4, 128)),
+        ('iterative', '0', (True, 0.4, 128)),
+        ('iterative', '0', (True, 0.4, 128)),
+        ('iterative', '0', (True, 0.4, 128)),
+
+        ('iterative', '0', (True, 0.3, 128)),
+        ('iterative', '0', (True, 0.3, 128)),
+        ('iterative', '0', (True, 0.3, 128)),
+        ('iterative', '0', (True, 0.3, 128)),
+        ('iterative', '0', (True, 0.3, 128)),
+
+        ('iterative', '0', (True, 0.2, 128)),
+        ('iterative', '0', (True, 0.2, 128)),
+        ('iterative', '0', (True, 0.2, 128)),
+        ('iterative', '0', (True, 0.2, 128)),
+        ('iterative', '0', (True, 0.2, 128)),
+
+        ('iterative', '0', (True, 0.1, 128)),
+        ('iterative', '0', (True, 0.1, 128)),
+        ('iterative', '0', (True, 0.1, 128)),
+        ('iterative', '0', (True, 0.1, 128)),
+        ('iterative', '0', (True, 0.1, 128))
     ]
     create_bool = [
         1 if True
