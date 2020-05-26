@@ -77,7 +77,7 @@ def apply_prune_mask(model, masks):
         layer.weight.register_hook(hook_factory(mask))
 
 
-def snip_skip_layers(model, keep_ratio, loader, loss, device='cpu'):
+def snip_skip_layers(model, keep_ratio, loader, loss, device='cpu', reinitialize=True):
     inputs, targets = next(iter(loader))
     inputs, targets = inputs.to(device), targets.to(device)
     _model = copy.deepcopy(model)
@@ -88,7 +88,8 @@ def snip_skip_layers(model, keep_ratio, loader, loss, device='cpu'):
         lin = isinstance(layer, nn.Linear)
         if conv2 or lin:
             layer.weight_mask = nn.Parameter(torch.ones_like(layer.weight))
-            nn.init.xavier_normal_(layer.weight)
+            if reinitialize:
+                nn.init.xavier_normal_(layer.weight)
             layer.weight.requires_grad = False
             count_pruned += 1
             if conv2:
