@@ -414,7 +414,7 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
         'lrs': []
     }
     epochs, epoch_growth, epoch_prune = params['epochs'], params['epoch_growth'], params['epoch_prune']
-    pruning_batch_size, pruning_type = params['prune_batch_size'], params['prune_type']
+    pruning_batch_size, pruning_type, reinit = params['prune_batch_size'], params['prune_type'], params['reinit']
 
     #epoch_growth = [25, 50, 75]  # [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
     print("array params: num_ics {}, epochs {}".format(model.num_ics, epochs))
@@ -441,7 +441,7 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
         if epoch in epoch_prune and model.prune:
             loader = get_loader(prune_dataset, False)
             if pruning_type == '0':
-                count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
+                count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device, reinit)
             elif pruning_type == '1':
                 prune2(model, model.keep_ratio, loader, sdn_loss, device)
 
@@ -788,8 +788,8 @@ def calc_coeff(model):
 
 # max tau: % of the network for the IC -> if 3 outputs: 0.33, 0.66, 1
 
-def prune(model, keep_ratio, loader, loss, count_pruned, device):
-    masks, cur_pruned = snip.snip_skip_layers(model, keep_ratio, loader, loss, device)
+def prune(model, keep_ratio, loader, loss, count_pruned, device, reinit):
+    masks, cur_pruned = snip.snip_skip_layers(model, keep_ratio, loader, loss, device, reinit)
     snip.apply_prune_mask_skip_layers(model, masks, count_pruned)
     return cur_pruned
 

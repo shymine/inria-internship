@@ -38,7 +38,8 @@ def train_model(models_path, cr_params, device, num=0):
         epoch_growth=[25, 50, 75],
         epoch_prune=[1, 25, 50, 75],
         prune_batch_size=pruning[2],
-        prune_type='0'
+        prune_type='0',
+        reinit=False
     )
     print("batch_size: {}".format(train_params['prune_batch_size']))
     optimizer, scheduler = af.get_full_optimizer(model, opti_param, lr_schedule_params)
