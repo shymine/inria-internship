@@ -793,6 +793,9 @@ def prune(model, keep_ratio, loader, loss, count_pruned, device, reinit):
     snip.apply_prune_mask_skip_layers(model, masks, count_pruned)
     return cur_pruned
 
+def prune_whole():
+    print("prune")
+
 def prune2(layers, keep_ratio, loader, loss, device):
     masks = snip.snip(layers, keep_ratio, loader, loss, device)
     snip.apply_prune_mask(layers, masks)
