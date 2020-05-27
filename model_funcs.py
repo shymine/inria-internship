@@ -427,6 +427,7 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
 
     if model.prune:
         prune_dataset = af.get_dataset('cifar10', batch_size=pruning_batch_size)
+        print("pruning_batch_size: {}, prune_type: {}, reinit: {}".format(pruning_batch_size, pruning_type, reinit))
 
     best_model, accuracies, best_epoch = None, None, 0
     count_pruned = 0

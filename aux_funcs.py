@@ -559,7 +559,7 @@ def print_acc(arr, groups=None, extend=False):
                 stds = [statistics.stdev([float(j) for j in i]) for i in tr]
                 print("{} means: {}".format(i, means))
                 print("{} stds: {}".format(i, stds))
-                print("{} std%: {}".format(i, [100 * std / mean for std, mean in zip(stds, means)]))
+                print("{} std /100: {}".format(i, [100 * std / mean for std, mean in zip(stds, means)]))
 
 def reverse(test_acc):
     max_len = len(test_acc[-1])

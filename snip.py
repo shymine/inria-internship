@@ -77,7 +77,7 @@ def apply_prune_mask(model, masks):
         layer.weight.register_hook(hook_factory(mask))
 
 
-def snip_skip_layers(model, keep_ratio, loader, loss, device='cpu', reinitialize=True):
+def snip_skip_layers(model, keep_ratio, loader, loss, device='cpu', reinit=True):
     inputs, targets = next(iter(loader))
     inputs, targets = inputs.to(device), targets.to(device)
     _model = copy.deepcopy(model)
@@ -88,7 +88,7 @@ def snip_skip_layers(model, keep_ratio, loader, loss, device='cpu', reinitialize
         lin = isinstance(layer, nn.Linear)
         if conv2 or lin:
             layer.weight_mask = nn.Parameter(torch.ones_like(layer.weight))
-            if reinitialize:
+            if reinit:
                 nn.init.xavier_normal_(layer.weight)
             layer.weight.requires_grad = False
             count_pruned += 1
@@ -149,3 +149,25 @@ def apply_prune_mask_skip_layers(model, masks, count_pruned):
             layer.weight.data[mask == 0.] = 0.
             layer.weight.register_hook(hook_factory(mask))
         count += 1
+
+def snip_bloc_iterative(model, keep_ratio, mini_ratio, steps, loader, loss, device='cpu', reinit=True):
+    inputs, targets = next(iter(loader))
+    inputs, targets = inputs.to(device), targets.to(device)
+    _model = copy.deepcopy(model)
+
+    # détection et répartition des blocs
+    indexes = [0]
+    for i, v in enumerate(_model.ics):
+        if v == 1:
+            indexes.append(i)
+    indexes.append(len(_model.ics)-1)
+    blocks = []
+    for i in range(len(indexes)-1):
+        first,second = indexes[i], indexes[i+1] + 1
+        if first != 0:
+            first += 1
+        blocks.append(_model.layers[first:second])
+    blocks[0].insert(0, _model.init_conv)
+    if sum(_model.ics) == _model.num_output:
+        blocks[-1].append(_model.end_layers)
+    
