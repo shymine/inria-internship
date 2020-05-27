@@ -545,8 +545,8 @@ def print_acc(arr, groups=None, extend=False):
         acc = [i[1]['test_top1_acc'] for i in arr]
         if groups is None:
             tr = reverse(acc)
-            means = [mean_(i) for i in tr]
-            stds = [statistics.stdev(i) for i in tr]
+            means = [statistics.fmean(i) for i in tr]
+            stds = [statistics.stdev(float(i)) for i in tr]
             print("means: {}".format(means))
             print("stds: {}".format(stds))
             print("std%: {}".format([100*std/mean for std, mean in zip(stds, means)]))
