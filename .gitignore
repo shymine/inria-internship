@@ -20,3 +20,4 @@ overthinking_experiments.py
 ## only for running experiments on inria
 
 igrida_bash.sh
+/print_plots.py
