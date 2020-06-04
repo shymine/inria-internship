@@ -84,7 +84,7 @@ def main(mode, load):
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
     create_params = [
-        ('iterative', '0', (True, 0.8, 128))
+        ('iterative', '0', (True, 0.8, 128)),
         ('iterative', '0', (True, 0.8, 128)),
         ('iterative', '0', (True, 0.8, 128)),
         ('iterative', '0', (True, 0.8, 128)),
