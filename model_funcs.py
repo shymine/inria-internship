@@ -2,6 +2,7 @@
 # implements the functions for training, testing SDNs and CNNs
 # also implements the functions for computing confusion and confidence
 import copy
+import sys
 import time
 
 import numpy as np
@@ -419,6 +420,7 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
     #epoch_growth = [25, 50, 75]  # [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
     print("array params: num_ics {}, epochs {}".format(model.num_ics, epochs))
     print("epochs growth: {}".format(epoch_growth))
+    print("epochs prune: {}".format(epoch_prune))
 
     max_coeffs = calc_coeff(model)
     print('max_coeffs: {}'.format(max_coeffs))
@@ -431,6 +433,8 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
 
     best_model, accuracies, best_epoch = None, None, 0
     count_pruned = 0
+    masks = []
+    mask1 = None
     for epoch in range(1, epochs + 1):
 
         if epoch in epoch_growth:
@@ -442,9 +446,41 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
         if epoch in epoch_prune and model.prune:
             loader = get_loader(prune_dataset, False)
             if pruning_type == '0':
-                count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device, reinit)
+                count_pruned = prune_skip_layer(model, model.keep_ratio, loader, sdn_loss, count_pruned, device, reinit)
             elif pruning_type == '1':
                 prune2(model, model.keep_ratio, loader, sdn_loss, device)
+            elif pruning_type == "2":
+                steps = []
+                _epoch_growth = [1] + epoch_growth
+                for i in range(len(_epoch_growth)):
+                    if epoch < _epoch_growth[i]:
+                        steps.append(0)
+                    else:
+                        v = [0 if e < _epoch_growth[i] or e > epoch else 1 for e in epoch_prune]
+                        print("ic_{} pruning count: {}".format(i, v))
+                        steps.append(sum(v)-1)
+                print("steps: {}".format(steps))
+                mask = prune_iterative(model, model.keep_ratio, params['min_ratio'], steps, loader, sdn_loss, device, reinit)
+                masks.append(mask)
+                # code for checking that the connections pruned are consistent at the different pruning times
+                if mask1 is not None:
+                    mask2 = mask
+                    for i in range(len(mask1)):
+                        flat01 = torch.tensor([y for x in mask1[i] for y in torch.flatten(x)])
+                        flat02 = torch.tensor([y for x in mask2[i] for y in torch.flatten(x)])
+                        kept = torch.sum(flat02)/len(flat02)
+                        print("kept{}: {}".format(i, kept))
+                        print("len1, len2: {}, {}".format(len(flat01), len(flat02)))
+                        a0 = sum([1 if a == 0 and b != 0 else 0 for a, b in zip(flat01, flat02)])
+                        print("num of elem in 1 not in 2 for bloc{}: {}".format(i, a0))
+                    mask1 = mask2
+                else:
+                    mask1 = mask
+                    for i in range(len(mask1)):
+                        flat0 = torch.tensor([y for x in mask1[i] for y in torch.flatten(x)])
+                        kept = torch.sum(flat0) / len(flat0)
+                        print("kept{}: {}".format(i, kept))
+
 
         epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
 
@@ -464,6 +500,7 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
     metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(best_model, data.test_loader, device)
     test_top1, test_top3 = sdn_test(model, data.test_loader, device)
     metrics['best_model_epoch'] = best_epoch
+    metrics['masks'] = masks
     print("best epoch: {}".format(best_epoch))
     print("comparison best and latest: {}/{}".format(metrics['test_top1_acc'], test_top1))
     return metrics, best_model
@@ -495,7 +532,7 @@ def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
 
     if model.prune:
         loader = get_loader(data, False)
-        count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, 0, device)
+        count_pruned = prune_skip_layer(model, model.keep_ratio, loader, sdn_loss, 0, device)
     best_model, accuracies = None, None
     for epoch in range(max_epoch):
         epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
@@ -508,7 +545,7 @@ def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
             print("layers: {}".format(model.layers))
             if model.prune:
                 loader = get_loader(data, False)
-                count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
+                count_pruned = prune_skip_layer(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
 
         if epoch in freeze_epochs:
             index = freeze_epochs.index(epoch)
@@ -582,7 +619,7 @@ def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
 
     if model.prune:
         loader = get_loader(data, False)
-        count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, 0, device)
+        count_pruned = prune_skip_layer(model, model.keep_ratio, loader, sdn_loss, 0, device)
     best_model, accuracies = None, None
     for epoch in range(epochs):
 
@@ -597,7 +634,7 @@ def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
             print("model grow")
             if model.prune:
                 loader = get_loader(data, False)
-                count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
+                count_pruned = prune_skip_layer(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
 
         if epoch in unfreeze_epochs:
             for params in model.parameters(True):
@@ -655,7 +692,7 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
 
     if model.prune:
         loader = get_loader(data, False)
-        count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, 0, device)
+        count_pruned = prune_skip_layer(model, model.keep_ratio, loader, sdn_loss, 0, device)
     best_model, accuracies = None, None
     for epoch in range(int(epoch_growth[-1])):
         epoch_routine(model, data, optimizer, scheduler, epoch, int(epoch_growth[-1]), augment, metrics, device)
@@ -669,7 +706,7 @@ def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
             print("model grow")
             if model.prune:
                 loader = get_loader(data, False)
-                count_pruned = prune(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
+                count_pruned = prune_skip_layer(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
 
         if epoch in unfreeze_epochs:
             for params in model.parameters(True):
@@ -789,14 +826,25 @@ def calc_coeff(model):
 
 # max tau: % of the network for the IC -> if 3 outputs: 0.33, 0.66, 1
 
-def prune(model, keep_ratio, loader, loss, count_pruned, device, reinit):
-    masks, cur_pruned = snip.snip_skip_layers(model, keep_ratio, loader, loss, device, reinit)
+def prune_skip_layer(model, keep_ratio, loader, loss, count_pruned, device, reinit):
+    masks, cur_pruned = snip.snip_skip_layers(model, keep_ratio, loader, loss, count_pruned, device, reinit)
     snip.apply_prune_mask_skip_layers(model, masks, count_pruned)
     return cur_pruned
 
-def prune_whole():
-    print("prune")
+def prune_iterative(model, k_r, min_ratio, steps, loader, loss, device, reinit):
+    masks = snip.snip_bloc_iterative(model, k_r, min_ratio, steps, loader, loss, device, reinit)
+    snip.apply_prune_mask_bloc_iterative(model, masks)
+    mask_no_tensor = []
+    for bloc in masks:
+        el = []
+        for tensor in bloc:
+            el.append(tensor.cpu().numpy())
+        mask_no_tensor.append(el)
+    mask_no_tensor = np.array(mask_no_tensor)
+
+    return masks
 
 def prune2(layers, keep_ratio, loader, loss, device):
     masks = snip.snip(layers, keep_ratio, loader, loss, device)
     snip.apply_prune_mask(layers, masks)
+    return masks
