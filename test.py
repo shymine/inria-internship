@@ -45,7 +45,7 @@ def main():
     # af.print_acc([(None, i) for i in metrics], True)
     print("test")
     device = af.get_pytorch_device()
-    model, param = arcs.create_resnet_iterative("results/", "iterative", "0", (True, 0.8, 128), False)
+    model, param = arcs.create_resnet_iterative("networks/", "iterative", "0", (True, 0.8, 128), False)
     # loader = model_funcs.get_loader(data.CIFAR10(), False)
 
     # masks1 = snip.snip_bloc_iterative(model, 0.8, 0.5, [0, 0, 0, 0], loader, model_funcs.sdn_loss, reinit=False)
