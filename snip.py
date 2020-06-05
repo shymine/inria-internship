@@ -192,7 +192,9 @@ def snip_bloc_iterative(model, keep_ratio, mini_ratio, steps, loader, loss, devi
         all_scores.div_(norm_factor)
 
         tmp = keep_ratio ** (steps[id] + 1)
-        intern_keep_ratio = tmp if tmp > mini_ratio else mini_ratio
+        #intern_keep_ratio = tmp if tmp > mini_ratio else mini_ratio
+        intern_keep_ratio = tmp
+        print("keep ratio {}: {}".format(id, intern_keep_ratio))
 
         num_params_to_keep = int(len(all_scores) * intern_keep_ratio)
         threshold, _ = torch.topk(all_scores, num_params_to_keep, sorted=True)
