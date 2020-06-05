@@ -586,8 +586,8 @@ def plot_acc(arr):
         ax.set_xlabel('epochs')
         ax.set_ylabel('accuracy')
         name = "_".join(m['name'].split('_')[3:]) + "\nmilestones{}_{}".format(m['milestones'], m['gammas'])
-        ax.set_title(name)
-        ax.set_subtitle('accuracy: {}'.format(m['test_top1_acc']))
+        ax.set_title(name + '\naccuracy: {}'.format(m['test_top1_acc']))
+
         ax.plot([i for i in range(len(acc))],
                 tr[0],
                 label="IC 1")
