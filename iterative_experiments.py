@@ -40,7 +40,7 @@ def train_model(models_path, cr_params, device, num=0):
         prune_batch_size=pruning[2],
         prune_type='2',
         reinit=False,
-        min_ratio=0.8
+        min_ratio=None
     )
     optimizer, scheduler = af.get_full_optimizer(model, opti_param, lr_schedule_params)
     metrics, best_model = model.train_func(model, dataset,
@@ -84,8 +84,8 @@ def main(mode, load):
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
     create_params = [
-        ('iterative', '0', (True, 0.8, 128)),
-        ('iterative', '0', (True, 0.8, 128))
+        ('dense', '0', (True, 0.8, 128)),
+        ('dense', '0', (True, 0.8, 128))
     ]
     create_bool = [
         1 if True

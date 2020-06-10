@@ -481,7 +481,6 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
                         kept = torch.sum(flat0) / len(flat0)
                         print("kept{}: {}".format(i, kept))
 
-
         epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
 
         if model.num_output == model.num_ics + 1:
@@ -494,8 +493,6 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
                 best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
                 best_epoch = epoch
                 print("New best model: {}".format(accuracies))
-
-        #print(gpu_usage())
 
     metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(best_model, data.test_loader, device)
     test_top1, test_top3 = sdn_test(model, data.test_loader, device)

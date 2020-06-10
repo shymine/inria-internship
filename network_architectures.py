@@ -162,7 +162,6 @@ def create_resnet_iterative(models_path, type="full", mode=None, prune=(False, 0
     model_params['augment_training'] = True
     model_params['init_weights'] = True
     model_params['block_type'] = 'basic'
-
     model_params['momentum'] = 0.9
 
     network_type = model_params['network_type']
