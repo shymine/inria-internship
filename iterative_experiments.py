@@ -85,6 +85,9 @@ def main(mode, load):
     device = af.get_pytorch_device()
     create_params = [
         ('dense', '0', (True, 0.8, 128)),
+        ('dense', '0', (True, 0.8, 128)),
+        ('dense', '0', (True, 0.8, 128)),
+        ('dense', '0', (True, 0.8, 128)),
         ('dense', '0', (True, 0.8, 128))
     ]
     create_bool = [
