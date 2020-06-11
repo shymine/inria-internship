@@ -66,7 +66,6 @@ def multi_experiments(models_path, params, device):
             yield train_model(models_path, create, device, num=count)
             count += 1
 
-
 def _link_metrics(params, metrics):
     params['train_top1_acc'] = metrics['train_top1_acc']
     params['train_top3_acc'] = metrics['train_top3_acc']
@@ -77,7 +76,6 @@ def _link_metrics(params, metrics):
     params['epoch_times'] = metrics['epoch_times']
     params['lrs'] = metrics['lrs']
     params['best_model_epoch'] = metrics['best_model_epoch']
-
 
 def main(mode, load):
     random_seed = af.get_random_seed()

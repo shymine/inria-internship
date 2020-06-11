@@ -129,7 +129,6 @@ def snip_skip_layers(model, keep_ratio, loader, loss, index_to_prune, device='cp
         for g in grads_abs:
             keep_masks.append(((g / norm_factor) >= acceptable_score).float())
         masks.append(keep_masks)
-    print("masks: {}".format(masks))
     return masks
 
 
@@ -148,6 +147,7 @@ def apply_prune_mask_skip_layers(model, masks, index_to_prune):
         )
         mask = masks[id]
         for layer, mask in zip(prunable_layers, mask):
+            print("layer shape: {}, mask shape: {}".format(layer.weight.shape, mask.shape))
             assert (layer.weight.shape == mask.shape)
 
             def hook_factory(mask):
