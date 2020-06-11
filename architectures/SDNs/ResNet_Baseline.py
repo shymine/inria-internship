@@ -139,7 +139,6 @@ class ResNet_Baseline(nn.Module):
         added_input = fwd
         for layer in self.layers:
             fwd, is_output, output = layer(added_input)
-            print("shape of fwd: {}".format(fwd.shape))
             added_input = torch.cat([added_input, fwd], 1)
             if is_output:
                 outputs.append(output)
@@ -153,7 +152,6 @@ class ResNet_Baseline(nn.Module):
         added_input = fwd
         for layer in self.layers:
             fwd, is_output, output = layer(added_input)
-
             added_input = torch.cat([added_input, fwd], 1)
             if is_output:
                 outputs.append(output)
