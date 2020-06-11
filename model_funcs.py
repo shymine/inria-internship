@@ -430,11 +430,12 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
     if model.prune:
         prune_dataset = af.get_dataset('cifar10', batch_size=pruning_batch_size)
         print("pruning_batch_size: {}, prune_type: {}, reinit: {}".format(pruning_batch_size, pruning_type, reinit))
+        print("min_ratio: {}".format(params['min_ratio']))
 
     best_model, accuracies, best_epoch = None, None, 0
-    count_pruned = 0
     masks = []
     mask1 = None
+    block_to_prune = 0
     for epoch in range(1, epochs + 1):
 
         if epoch in epoch_growth:
@@ -446,7 +447,8 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
         if epoch in epoch_prune and model.prune:
             loader = get_loader(prune_dataset, False)
             if pruning_type == '0':
-                count_pruned = prune_skip_layer(model, model.keep_ratio, loader, sdn_loss, count_pruned, device, reinit)
+                prune_skip_layer(model, model.keep_ratio, loader, sdn_loss, block_to_prune, device, reinit)
+                block_to_prune += 1
             elif pruning_type == '1':
                 prune2(model, model.keep_ratio, loader, sdn_loss, device)
             elif pruning_type == "2":
@@ -823,21 +825,20 @@ def calc_coeff(model):
 
 # max tau: % of the network for the IC -> if 3 outputs: 0.33, 0.66, 1
 
-def prune_skip_layer(model, keep_ratio, loader, loss, count_pruned, device, reinit):
-    masks, cur_pruned = snip.snip_skip_layers(model, keep_ratio, loader, loss, count_pruned, device, reinit)
-    snip.apply_prune_mask_skip_layers(model, masks, count_pruned)
-    return cur_pruned
+def prune_skip_layer(model, keep_ratio, loader, loss, index_to_prune, device, reinit):
+    masks = snip.snip_skip_layers(model, keep_ratio, loader, loss, index_to_prune, device, reinit)
+    snip.apply_prune_mask_skip_layers(model, masks, index_to_prune)
 
 def prune_iterative(model, k_r, min_ratio, steps, loader, loss, device, reinit):
     masks = snip.snip_bloc_iterative(model, k_r, min_ratio, steps, loader, loss, device, reinit)
     snip.apply_prune_mask_bloc_iterative(model, masks)
-    mask_no_tensor = []
-    for bloc in masks:
-        el = []
-        for tensor in bloc:
-            el.append(tensor.cpu().numpy())
-        mask_no_tensor.append(el)
-    mask_no_tensor = np.array(mask_no_tensor)
+    # mask_no_tensor = []
+    # for bloc in masks:
+    #     el = []
+    #     for tensor in bloc:
+    #         el.append(tensor.cpu().numpy())
+    #     mask_no_tensor.append(el)
+    # mask_no_tensor = np.array(mask_no_tensor)
 
     return masks
 

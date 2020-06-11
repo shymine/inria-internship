@@ -582,10 +582,10 @@ def plot_acc(arr):
         acc = m['valid_top1_acc']
         tr = reverse(acc)
         fig, ax = plt.subplots()
-        ax.text(m['epochs']-60, 30, "best model epoch: \n{}".format(m['best_model_epoch']))
+        ax.text(m['epochs']-80, 20, "best model epoch: \n{}".format(m['best_model_epoch']))
         ax.set_xlabel('epochs')
         ax.set_ylabel('accuracy')
-        name = "_".join(m['name'].split('_')[3:]) + "\nmilestones{}_{}".format(m['milestones'], m['gammas'])
+        name = "_".join(m['name'].split('_')[3:])
         ax.set_title(name + '\naccuracy: {}'.format(m['test_top1_acc']))
 
         ax.plot([i for i in range(len(acc))],

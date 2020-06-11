@@ -78,78 +78,85 @@ def apply_prune_mask(model, masks):
         layer.weight.register_hook(hook_factory(mask))
 
 
-def snip_skip_layers(model, keep_ratio, loader, loss, count_last_pruned, device='cpu', reinit=True):
+def snip_skip_layers(model, keep_ratio, loader, loss, index_to_prune, device='cpu', reinit=True):
+
     inputs, targets = next(iter(loader))
     inputs, targets = inputs.to(device), targets.to(device)
     _model = copy.deepcopy(model)
-    count_pruned = 0
+    blocks = get_blocs(_model)
+    if index_to_prune >= len(blocks):
+        print("index out of bloc range: index {}, number of blocks {}".format(index_to_prune, len(blocks)))
+        return None
 
     for layer in _model.modules():
         conv2 = isinstance(layer, nn.Conv2d)
         lin = isinstance(layer, nn.Linear)
         if conv2 or lin:
             layer.weight_mask = nn.Parameter(torch.ones_like(layer.weight))
-            if reinit and count_pruned > count_last_pruned:
-                nn.init.xavier_normal_(layer.weight)
             layer.weight.requires_grad = False
-            count_pruned += 1
             if conv2:
                 layer.forward = types.MethodType(snip_forward_conv2d, layer)
             if lin:
                 layer.forward = types.MethodType(snip_forward_linear, layer)
 
-    #compte le nombre de layers qui ont été pruned dans le modèle
-    print("count_pruned in snip: {}".format(count_pruned))
-
     _model.to(device)
     _model.zero_grad()
-    print("shape of input: {}".format(inputs.shape))
     outputs = _model(inputs)
     total_loss = loss(outputs, targets)
     total_loss.backward()
 
-    grads_abs = []
-    for layer in _model.modules():
-        if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
-            if layer.weight_mask.grad is not None:
+    masks = []
+    for id, bloc in enumerate(blocks):
+        if id != index_to_prune:
+            masks.append([])
+            continue
+        grads_abs = []
+        for layer in _model.modules():
+            if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear) and layer.weight_mask.grad is not None:
                 grads_abs.append(torch.abs(layer.weight_mask.grad))
-    all_scores = torch.cat([torch.flatten(x) for x in grads_abs])
-    norm_factor = torch.sum(all_scores)
-    all_scores.div_(norm_factor)
+        if len(grads_abs) == 0:
+            masks.append([])
+            continue
+        all_scores = torch.cat([torch.flatten(x) for x in grads_abs])
+        norm_factor = torch.sum(all_scores)
+        all_scores.div_(norm_factor)
 
-    num_params_to_keep = int(len(all_scores) * keep_ratio)
-    threshold, _ = torch.topk(all_scores, num_params_to_keep, sorted=True)
-    acceptable_score = threshold[-1]
+        num_params_to_keep = int(len(all_scores) * keep_ratio[id])
+        threshold, _ = torch.topk(all_scores, num_params_to_keep, sorted=True)
+        acceptable_score = threshold[-1]
 
-    keep_masks = []
-    for g in grads_abs:
-        keep_masks.append(((g / norm_factor) >= acceptable_score).float())
+        keep_masks = []
+        for g in grads_abs:
+            keep_masks.append(((g / norm_factor) >= acceptable_score).float())
+        masks.append(keep_masks)
+    print("masks: {}".format(masks))
+    return masks
 
 
-    return (keep_masks, count_pruned-1)
+def apply_prune_mask_skip_layers(model, masks, index_to_prune):
+    if masks is None:
+        return
 
+    blocks = get_blocs(model)
 
-def apply_prune_mask_skip_layers(model, masks, count_pruned):
-    prunable_layers = filter(
-        lambda layer: isinstance(layer, (nn.Linear, nn.Conv2d)),
-        model.modules()
-    )
-    count = 0
-    for layer, mask in zip(prunable_layers, masks):
-        assert (layer.weight.shape == mask.shape)
+    for id, bloc in enumerate(blocks):
+        if id != index_to_prune:
+            continue
+        prunable_layers = filter(
+            lambda layer: isinstance(layer, (nn.Linear, nn.Conv2d)),
+            bloc.modules()
+        )
+        mask = masks[id]
+        for layer, mask in zip(prunable_layers, mask):
+            assert (layer.weight.shape == mask.shape)
 
-        def hook_factory(mask):
-            def hook(grads):
-                return grads * mask
+            def hook_factory(mask):
+                def hook(grads):
+                    return grads * mask
+                return hook
 
-            return hook
-
-        if count >= count_pruned:
-            # l'id des couches (linear and conv2d not blocks) that are pruned
-            print("pruned: {}".format(count))
             layer.weight.data[mask == 0.] = 0.
             layer.weight.register_hook(hook_factory(mask))
-        count += 1
 
 def snip_bloc_iterative(model, keep_ratio, mini_ratio, steps, loader, loss, device='cpu', reinit=True):
     # mini_ratio is now an array for every bloc

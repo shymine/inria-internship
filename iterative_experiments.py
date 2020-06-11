@@ -36,11 +36,11 @@ def train_model(models_path, cr_params, device, num=0):
     train_params = dict(
         epochs=params['epochs'],
         epoch_growth=[25, 50, 75],
-        epoch_prune=[10, 35, 60, 85, 95, 105, 125, 130],
+        epoch_prune= [35, 60, 85],#[10, 35, 60, 85, 95, 105, 125, 130],
         prune_batch_size=pruning[2],
-        prune_type='2',
+        prune_type='0', # 0 skip layer, 1 normal full, 2 iterative
         reinit=False,
-        min_ratio=[0.5, 0.6, 0.7, 0.8]
+        min_ratio=[0.8, 0.7, 0.6, 0.5]
     )
     optimizer, scheduler = af.get_full_optimizer(model, opti_param, lr_schedule_params)
     metrics, best_model = model.train_func(model, dataset,
@@ -84,11 +84,7 @@ def main(mode, load):
     models_path = 'networks/{}'.format(random_seed)
     device = af.get_pytorch_device()
     create_params = [
-        ('dense', '0', (True, 0.8, 128)),
-        ('dense', '0', (True, 0.8, 128)),
-        ('dense', '0', (True, 0.8, 128)),
-        ('dense', '0', (True, 0.8, 128)),
-        ('dense', '0', (True, 0.8, 128))
+        ('dense', '0', (True, [0.8, 0.8, 0.8, 0.8], 128))
     ]
     create_bool = [
         1 if True
