@@ -36,11 +36,11 @@ def train_model(models_path, cr_params, device, num=0):
     train_params = dict(
         epochs=params['epochs'],
         epoch_growth=[25, 50, 75],
-        epoch_prune=[10, 35, 60, 85, 95, 105],
+        epoch_prune=[10, 35, 60, 85, 95, 105, 125, 130],
         prune_batch_size=pruning[2],
         prune_type='2',
         reinit=False,
-        min_ratio=None
+        min_ratio=[0.5, 0.6, 0.7, 0.8]
     )
     optimizer, scheduler = af.get_full_optimizer(model, opti_param, lr_schedule_params)
     metrics, best_model = model.train_func(model, dataset,

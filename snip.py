@@ -152,6 +152,7 @@ def apply_prune_mask_skip_layers(model, masks, count_pruned):
         count += 1
 
 def snip_bloc_iterative(model, keep_ratio, mini_ratio, steps, loader, loss, device='cpu', reinit=True):
+    # mini_ratio is now an array for every bloc
     inputs, targets = next(iter(loader))
     inputs, targets = inputs.to(device), targets.to(device)
     _model = copy.deepcopy(model)
@@ -193,7 +194,7 @@ def snip_bloc_iterative(model, keep_ratio, mini_ratio, steps, loader, loss, devi
 
         intern_keep_ratio = keep_ratio ** (steps[id] + 1)
         if mini_ratio is not None:
-            intern_keep_ratio = intern_keep_ratio if intern_keep_ratio > mini_ratio else mini_ratio
+            intern_keep_ratio = intern_keep_ratio if intern_keep_ratio > mini_ratio[id] else mini_ratio[id]
         # print("keep ratio {}: {}".format(id, intern_keep_ratio))
 
         num_params_to_keep = int(len(all_scores) * intern_keep_ratio)
