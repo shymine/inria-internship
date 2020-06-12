@@ -491,7 +491,7 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
                 best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
                 best_epoch = epoch
                 print("Begin best_model: {}".format(accuracies))
-            elif sum(metrics['valid_top1_acc'][-1]) > sum(accuracies):
+            elif sum([x*y for x,y in zip(metrics['valid_top1_acc'][-1], [0.25, 0.5, 0.75, 1])]) > sum(accuracies):
                 best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
                 best_epoch = epoch
                 print("New best model: {}".format(accuracies))

@@ -146,8 +146,10 @@ def apply_prune_mask_skip_layers(model, masks, index_to_prune):
             bloc.modules()
         )
         mask = masks[id]
+
         for layer, mask in zip(prunable_layers, mask):
-            print("layer shape: {}, mask shape: {}".format(layer.weight.shape, mask.shape))
+            print("layer: {}, \nmask: {}".format(layer, mask))
+            print("id: {}, layer shape: {}, mask shape: {}".format(id, layer.weight.shape, mask.shape))
             assert (layer.weight.shape == mask.shape)
 
             def hook_factory(mask):
