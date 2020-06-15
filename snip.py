@@ -84,10 +84,10 @@ def snip_skip_layers(model, keep_ratio, loader, loss, index_to_prune, device='cp
     inputs, targets = inputs.to(device), targets.to(device)
     _model = copy.deepcopy(model)
     blocks = get_blocs(_model)
+
     if index_to_prune >= len(blocks):
         print("index out of bloc range: index {}, number of blocks {}".format(index_to_prune, len(blocks)))
         return None
-
     for layer in _model.modules():
         conv2 = isinstance(layer, nn.Conv2d)
         lin = isinstance(layer, nn.Linear)
@@ -111,8 +111,12 @@ def snip_skip_layers(model, keep_ratio, loader, loss, index_to_prune, device='cp
             masks.append([])
             continue
         grads_abs = []
-        for layer in _model.modules():
+        a = True
+        for layer in bloc.modules():
             if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear) and layer.weight_mask.grad is not None:
+                if a:
+                    print("in mask layer: {}".format(layer))
+                    a = False
                 grads_abs.append(torch.abs(layer.weight_mask.grad))
         if len(grads_abs) == 0:
             masks.append([])
@@ -135,7 +139,6 @@ def snip_skip_layers(model, keep_ratio, loader, loss, index_to_prune, device='cp
 def apply_prune_mask_skip_layers(model, masks, index_to_prune):
     if masks is None:
         return
-
     blocks = get_blocs(model)
 
     for id, bloc in enumerate(blocks):
@@ -148,7 +151,6 @@ def apply_prune_mask_skip_layers(model, masks, index_to_prune):
         mask = masks[id]
 
         for layer, mask in zip(prunable_layers, mask):
-            print("layer: {}, \nmask: {}".format(layer, mask))
             print("id: {}, layer shape: {}, mask shape: {}".format(id, layer.weight.shape, mask.shape))
             assert (layer.weight.shape == mask.shape)
 
