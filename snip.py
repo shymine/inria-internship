@@ -203,7 +203,7 @@ def snip_bloc_iterative(model, keep_ratio, mini_ratio, steps, loader, loss, devi
         norm_factor = torch.sum(all_scores)
         all_scores.div_(norm_factor)
 
-        intern_keep_ratio = keep_ratio ** (steps[id] + 1)
+        intern_keep_ratio = keep_ratio[id] ** (steps[id] + 1)
         if mini_ratio is not None:
             intern_keep_ratio = intern_keep_ratio if intern_keep_ratio > mini_ratio[id] else mini_ratio[id]
         # print("keep ratio {}: {}".format(id, intern_keep_ratio))
