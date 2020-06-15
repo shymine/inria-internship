@@ -83,11 +83,11 @@ def main(mode, load):
     device = af.get_pytorch_device()
     create_params = [
         # type, training, (prune?, keep_ratio for ics, batch size)
-        ('dense', '0', (True, [0.9, 0.9, 0.9, 0.9], 128)),
-        ('dense', '0', (True, [0.9, 0.9, 0.9, 0.9], 128)),
-        ('dense', '0', (True, [0.9, 0.9, 0.9, 0.9], 128)),
-        ('dense', '0', (True, [0.9, 0.9, 0.9, 0.9], 128)),
-        ('dense', '0', (True, [0.9, 0.9, 0.9, 0.9], 128))
+        ('dense', '0', (True, [0.8, 0.8, 0.8, 0.8], 128)),
+        ('dense', '0', (True, [0.8, 0.8, 0.8, 0.8], 128)),
+        ('dense', '0', (True, [0.8, 0.8, 0.8, 0.8], 128)),
+        ('dense', '0', (True, [0.8, 0.8, 0.8, 0.8], 128)),
+        ('dense', '0', (True, [0.8, 0.8, 0.8, 0.8], 128))
     ]
     create_bool = [
         1 if True
