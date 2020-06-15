@@ -36,9 +36,9 @@ def train_model(models_path, cr_params, device, num=0):
     train_params = dict(
         epochs=params['epochs'],
         epoch_growth=[25, 50, 75],
-        epoch_prune=[10, 35, 60, 85, 110, 135, 160],  #[10, 35, 60, 85],  #
+        epoch_prune=[10, 35, 60, 85],  #,  #[10, 35, 60, 85, 110, 135, 160]
         prune_batch_size=pruning[2],
-        prune_type='2',  # 0 skip layer, 1 normal full, 2 iterative
+        prune_type='0',  # 0 skip layer, 1 normal full, 2 iterative
         reinit=False,
         min_ratio=[0.5, 0.5, 0.5, 0.5]  # not needed if skip layers, minimum for the iterative pruning
     )

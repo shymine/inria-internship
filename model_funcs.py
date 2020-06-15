@@ -487,17 +487,19 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
 
         if model.num_output == model.num_ics + 1:
             print("best model evaluation: {}/{}".format(metrics['valid_top1_acc'][-1], accuracies))
-            from_metric = sum([x*y for x,y in zip(metrics['valid_top1_acc'][-1], [0.25, 0.5, 0.75, 1])])
-            from_accuracy = sum([x*y for x,y in zip(accuracies, [0.25, 0.5, 0.75, 1])])
-            print("comparison best, current: {}/{}".format(from_accuracy, from_metric))
+
             if best_model is None:
                 best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
                 best_epoch = epoch
                 print("Begin best_model: {}".format(accuracies))
-            elif from_metric > from_accuracy:
-                best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
-                best_epoch = epoch
-                print("New best model: {}".format(accuracies))
+            else:
+                from_metric = sum([x * y for x, y in zip(metrics['valid_top1_acc'][-1], [0.25, 0.5, 0.75, 1])])
+                from_accuracy = sum([x * y for x, y in zip(accuracies, [0.25, 0.5, 0.75, 1])])
+                print("comparison best, current: {}/{}".format(from_accuracy, from_metric))
+                if from_metric > from_accuracy:
+                    best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
+                    best_epoch = epoch
+                    print("New best model: {}".format(accuracies))
 
     metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(best_model, data.test_loader, device)
     test_top1, test_top3 = sdn_test(model, data.test_loader, device)
