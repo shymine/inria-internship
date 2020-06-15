@@ -487,11 +487,14 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
 
         if model.num_output == model.num_ics + 1:
             print("best model evaluation: {}/{}".format(metrics['valid_top1_acc'][-1], accuracies))
+            from_metric = sum([x*y for x,y in zip(metrics['valid_top1_acc'][-1], [0.25, 0.5, 0.75, 1])])
+            from_accuracy = sum([x*y for x,y in zip(accuracies, [0.25, 0.5, 0.75, 1])])
+            print("comparison best, current: {}/{}".format(from_accuracy, from_metric))
             if best_model is None:
                 best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
                 best_epoch = epoch
                 print("Begin best_model: {}".format(accuracies))
-            elif sum([x*y for x,y in zip(metrics['valid_top1_acc'][-1], [0.25, 0.5, 0.75, 1])]) > sum(accuracies):
+            elif from_metric > from_accuracy:
                 best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
                 best_epoch = epoch
                 print("New best model: {}".format(accuracies))
