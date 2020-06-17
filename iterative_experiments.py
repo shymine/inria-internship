@@ -40,7 +40,7 @@ def train_model(models_path, cr_params, device, num=0):
         prune_batch_size=pruning[2],
         prune_type='2',  # 0 skip layer, 1 normal full, 2 iterative
         reinit=False,
-        min_ratio=[0.4, 0.3, 0.2, 0.1]  # not needed if skip layers, minimum for the iterative pruning
+        min_ratio=[0.4, 0.4, 0.4, 0.4]  # not needed if skip layers, minimum for the iterative pruning
     )
     optimizer, scheduler = af.get_full_optimizer(model, opti_param, lr_schedule_params)
     metrics, best_model = model.train_func(model, dataset,
@@ -83,11 +83,11 @@ def main(mode, load):
     device = af.get_pytorch_device()
     create_params = [
         # type, training, (prune?, keep_ratio for ics, batch size)
-        ('dense', '0', (True, [0.75, 0.66, 0.58, 0.46], 128)),
-        ('dense', '0', (True, [0.75, 0.66, 0.58, 0.46], 128)),
-        ('dense', '0', (True, [0.75, 0.66, 0.58, 0.46], 128)),
-        ('dense', '0', (True, [0.75, 0.66, 0.58, 0.46], 128)),
-        ('dense', '0', (True, [0.75, 0.66, 0.58, 0.46], 128))
+        ('dense', '0', (True, [0.75, 0.75, 0.75, 0.75], 128)),
+        ('dense', '0', (True, [0.75, 0.75, 0.75, 0.75], 128)),
+        ('dense', '0', (True, [0.75, 0.75, 0.75, 0.75], 128)),
+        ('dense', '0', (True, [0.75, 0.75, 0.75, 0.75], 128)),
+        ('dense', '0', (True, [0.75, 0.75, 0.75, 0.75], 128))
     ]
     create_bool = [
         1 if True
@@ -102,6 +102,9 @@ def main(mode, load):
     af.print_acc(arr, extend=True)
     #af.print_acc(arr, extend=False)
     af.plot_acc([m[1] for m in arr])
+    #print the numbers of paramters
+    print("number of parameters: {}".format([sum(p.numel() for p in model.parameters()) for model in [m[0] for m in arr]]))
+    print("number of trainable parameters: {}".format([sum(p.numel() for p in model.parameters() if p.requires_grad) for model in [m[0] for m in arr]]))
 
 if __name__ == '__main__':
     try:
