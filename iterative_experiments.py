@@ -104,7 +104,7 @@ def main(mode, load):
     af.plot_acc([m[1] for m in arr])
     #print the numbers of paramters
     print("number of parameters: {}".format([sum(p.numel() for p in model.parameters()) for model in [m[0] for m in arr]]))
-    print("number of trainable parameters: {}".format([sum(p.numel() for p in model.parameters() if p.requires_grad) for model in [m[0] for m in arr]]))
+    print("number of trainable parameters: {}".format([sum(filter(lambda x: x != 0., p.flatten()) for p in model.parameters() if p.requires_grad) for model in [m[0] for m in arr]]))
 
 if __name__ == '__main__':
     try:

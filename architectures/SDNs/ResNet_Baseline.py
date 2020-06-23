@@ -59,6 +59,8 @@ class ResNet_Baseline(nn.Module):
         self.layers = nn.ModuleList()
         self.end_layers = nn.Sequential(*end_layers)
 
+        print("end_layer num params: {}".format(sum([p.numel() for p in self.end_layers.parameters()])))
+
         train_funcs = {
             '0': mf.iter_training_0,
             '1': mf.iter_training_1,

@@ -1,6 +1,7 @@
 import copy
 import sys
 import types
+from functools import reduce
 
 import torch
 import torch.nn as nn
@@ -83,6 +84,10 @@ def snip_skip_layers(model, keep_ratio, loader, loss, index_to_prune, device='cp
     inputs, targets = next(iter(loader))
     inputs, targets = inputs.to(device), targets.to(device)
     _model = copy.deepcopy(model)
+
+    total_param = sum(p.numel() for p in model.parameters(True))
+    print("number of parameters: {}".format(total_param))
+
     blocks = get_blocs(_model)
 
     if index_to_prune >= len(blocks):
@@ -112,19 +117,27 @@ def snip_skip_layers(model, keep_ratio, loader, loss, index_to_prune, device='cp
             continue
         grads_abs = []
         a = True
-        for layer in bloc.modules():
+        for idx, layer in enumerate(bloc.modules()):
+            # gra = None
+            # if hasattr(layer, 'weight_mask'):
+            #     if layer.weight_mask.grad is not None:
+            #         gra = True
+            #     else:
+            #         gra = False
+            # else:
+            #     gra = 'no weight mask'
+            # print("{} layer: {}, grad: {}".format(idx, layer, gra))
             if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear) and layer.weight_mask.grad is not None:
-                if a:
-                    print("in mask layer: {}".format(layer))
-                    a = False
                 grads_abs.append(torch.abs(layer.weight_mask.grad))
+            if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
+                print("{} layer: {}, grad: {}".format(idx, layer, layer.weight_mask.grad is not None))
         if len(grads_abs) == 0:
             masks.append([])
             continue
         all_scores = torch.cat([torch.flatten(x) for x in grads_abs])
         norm_factor = torch.sum(all_scores)
         all_scores.div_(norm_factor)
-
+        #print("{} keep ratio: {}".format(id, keep_ratio[id]))
         num_params_to_keep = int(len(all_scores) * keep_ratio[id])
         threshold, _ = torch.topk(all_scores, num_params_to_keep, sorted=True)
         acceptable_score = threshold[-1]
@@ -133,6 +146,11 @@ def snip_skip_layers(model, keep_ratio, loader, loss, index_to_prune, device='cp
         for g in grads_abs:
             keep_masks.append(((g / norm_factor) >= acceptable_score).float())
         masks.append(keep_masks)
+        sums = [x.flatten().sum() for x in keep_masks]
+        print("sum: {}".format(sums))
+        sums = sum(sums)
+        numelem = sum([x.numel() for x in keep_masks])
+        print("{} kept params: {}".format(id, sums/numelem))
     return masks
 
 
@@ -151,7 +169,6 @@ def apply_prune_mask_skip_layers(model, masks, index_to_prune):
         mask = masks[id]
 
         for layer, mask in zip(prunable_layers, mask):
-            print("id: {}, layer shape: {}, mask shape: {}".format(id, layer.weight.shape, mask.shape))
             assert (layer.weight.shape == mask.shape)
 
             def hook_factory(mask):
@@ -161,6 +178,14 @@ def apply_prune_mask_skip_layers(model, masks, index_to_prune):
 
             layer.weight.data[mask == 0.] = 0.
             layer.weight.register_hook(hook_factory(mask))
+            print("layer and data: {}\n{}".format(layer, layer.weight))
+
+    total_param = sum(p.numel() for p in model.parameters(True))
+    param_z = sum([len(list(filter(lambda x: x != 0., p.flatten()))) for p in model.parameters(True) if p.requires_grad])
+    total_param = total_param-25610 if index_to_prune<3 else total_param
+    param_z = param_z-25610 if index_to_prune<3 else param_z
+    print("total param: {}\nparam_z: {}".format(total_param, param_z))
+    print("keep ratio: {}".format(param_z/total_param))
 
 def snip_bloc_iterative(model, keep_ratio, mini_ratio, steps, loader, loss, device='cpu', reinit=True):
     # mini_ratio is now an array for every bloc
@@ -206,7 +231,7 @@ def snip_bloc_iterative(model, keep_ratio, mini_ratio, steps, loader, loss, devi
         intern_keep_ratio = keep_ratio[id] ** (steps[id] + 1)
         if mini_ratio is not None:
             intern_keep_ratio = intern_keep_ratio if intern_keep_ratio > mini_ratio[id] else mini_ratio[id]
-        # print("keep ratio {}: {}".format(id, intern_keep_ratio))
+        print("keep ratio {}: {}".format(id, intern_keep_ratio))
 
         num_params_to_keep = int(len(all_scores) * intern_keep_ratio)
         threshold, _ = torch.topk(all_scores, num_params_to_keep, sorted=True)

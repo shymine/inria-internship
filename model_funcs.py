@@ -431,6 +431,7 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
         prune_dataset = af.get_dataset('cifar10', batch_size=pruning_batch_size)
         print("pruning_batch_size: {}, prune_type: {}, reinit: {}".format(pruning_batch_size, pruning_type, reinit))
         print("min_ratio: {}".format(params['min_ratio']))
+        print("keep_ratio: {}".format(model.keep_ratio))
 
     best_model, accuracies, best_epoch = None, None, 0
     masks = []
