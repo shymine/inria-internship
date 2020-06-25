@@ -54,6 +54,9 @@ class BasicBlockWOutput(nn.Module):
             self.forward = self.only_forward
             self.no_output = True
 
+        # for layer in filter(lambda l: isinstance(l, (nn.Conv2d, nn.Linear)), self.modules()):
+        #     print("init_layer id: {}, {}".format(layer, id(layer)))
+
     def forward(self, x):
         fwd = self.layers[0](x)  # conv layers
         fwd = fwd + self.layers[1](x)  # shortcut

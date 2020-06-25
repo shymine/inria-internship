@@ -221,7 +221,7 @@ def tiny_imagenet_params():
 
 
 def get_lr_params(model_params):
-    model_params['momentum'] = 0.9
+    model_params['momentum'] = 0. # 0.9
 
     network_type = model_params['network_type']
 
@@ -229,7 +229,7 @@ def get_lr_params(model_params):
         model_params['weight_decay'] = 0.0005
 
     else:
-        model_params['weight_decay'] = 0.0001
+        model_params['weight_decay'] = 0. #0.0001
 
     model_params['learning_rate'] = 0.1
     model_params['epochs'] = 100

@@ -12,25 +12,17 @@ import torch.nn as nn
 import aux_funcs as af
 import data
 import snip
-#from GPUtil import showUtilization as gpu_usage
 
-def sdn_training_step(optimizer, model, coeffs, batch, device):
+import pdb
+
+def sdn_training_step(optimizer, model, coeffs, batch, device, epoch):
     b_x = batch[0].to(device)
     b_y = batch[1].to(device)
     output = model(b_x)
     optimizer.zero_grad()  # clear gradients for this training step
-    # total_loss = 0.0
-    #
-    # for ic_id in range(model.num_output - 1):
-    #     cur_output = output[ic_id]
-    #     cur_loss = float(coeffs[ic_id])*af.get_loss_criterion()(cur_output, b_y)
-    #     total_loss += cur_loss
-    #
-    # total_loss += af.get_loss_criterion()(output[-1], b_y)
     total_loss = sdn_loss(output, b_y, coeffs)
     total_loss.backward()
     optimizer.step()  # apply gradients
-
     return total_loss
 
 
@@ -438,7 +430,7 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
     mask1 = None
     block_to_prune = 0
     for epoch in range(1, epochs + 1):
-
+        print('\nEpoch: {}/{}'.format(epoch, epochs))
         if epoch in epoch_growth:
             grown_layers = model.grow()
             model.to(device)
@@ -448,7 +440,7 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
         if epoch in epoch_prune and model.prune:
             loader = get_loader(prune_dataset, False)
             if pruning_type == '0':
-                prune_skip_layer(model, model.keep_ratio, loader, sdn_loss, block_to_prune, device, reinit)
+                mask1 = prune_skip_layer(model, model.keep_ratio, loader, sdn_loss, block_to_prune, mask1, device, reinit)
                 block_to_prune += 1
             elif pruning_type == '1':
                 prune2(model, model.keep_ratio, loader, sdn_loss, device)
@@ -501,82 +493,27 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
                     best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
                     best_epoch = epoch
                     print("New best model: {}".format(accuracies))
+        
+        blocks = snip.get_blocs(model)
+        print("blocs:")
+        for i, b in enumerate(blocks):
+            if i < model.num_output:
+                p_z = sum([torch.sum(layer.weight != 0) for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), b.modules())])
+                t_p = sum([layer.weight.nelement() for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), b.modules())])
+                print("    {} total: {}, non zero: {}, ratio: {:.2f}".format(i, t_p, p_z, float(p_z)/float(t_p)))
+        p_z = sum([torch.sum(layer.weight != 0) for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), model.modules())]) 
+        t_p = sum([layer.weight.nelement() for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), model.modules())])
+        p_z = p_z - 25610 if epoch < epoch_growth[-1] else p_z
+        t_p = t_p - 25610 if epoch < epoch_growth[-1] else t_p
+        print("total: {}, non zero: {}, ratio: {:.2f}".format(t_p, p_z, float(p_z)/float(t_p)))
 
     metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(best_model, data.test_loader, device)
-    test_top1, test_top3 = sdn_test(model, data.test_loader, device)
+    test_top1, _ = sdn_test(model, data.test_loader, device)
     metrics['best_model_epoch'] = best_epoch
     metrics['masks'] = masks
     print("best epoch: {}".format(best_epoch))
     print("comparison best and latest: {}/{}".format(metrics['test_top1_acc'], test_top1))
     return metrics, best_model
-
-
-# training with freezing the previous layers
-def iter_training_1(model, data, epochs, optimizer, scheduler, device='cpu'):
-    print("iter training 1")
-    augment = model.augment_training
-    metrics = dict(epoch_times=[],
-                   valid_top1_acc=[],
-                   valid_top3_acc=[],
-                   train_top1_acc=[],
-                   train_top3_acc=[],
-                   test_top1_acc=[],
-                   test_top3_acc=[],
-                   lrs=[])
-    epoch_growth = [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
-    print("epoch growth: {}".format(epoch_growth))
-    freeze_epochs = (np.array([0, 25, 50]) + epochs).tolist()
-    print("freeze epochs: {}".format(freeze_epochs))
-    max_coeffs = calc_coeff(model)
-
-    model.to(device)
-    model.to_train()
-
-    max_epoch = int(epoch_growth[-1]) + epochs
-    print("max_epoch: {}".format(max_epoch))
-
-    if model.prune:
-        loader = get_loader(data, False)
-        count_pruned = prune_skip_layer(model, model.keep_ratio, loader, sdn_loss, 0, device)
-    best_model, accuracies = None, None
-    for epoch in range(max_epoch):
-        epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
-
-        if epoch in epoch_growth:
-            grown_layers = model.grow()
-            model.to(device)
-            optimizer.add_param_group({'params': grown_layers})
-            print("model grow")
-            print("layers: {}".format(model.layers))
-            if model.prune:
-                loader = get_loader(data, False)
-                count_pruned = prune_skip_layer(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
-
-        if epoch in freeze_epochs:
-            index = freeze_epochs.index(epoch)
-            index_to_freeze = 0  # the index of the layer until which we freeze the network
-            print("index of freeze_epoch: {}".format(index))
-            nb = 0
-            for ic in model.ics:
-                nb += ic
-                index_to_freeze += 1
-                if nb > index:
-                    break
-            print("index_to_freeze: {}".format(index_to_freeze))
-            for bloc in model.layers[:index_to_freeze]:
-                for param in bloc.parameters(True):
-                    param.require_grad = False
-        if model.num_output == model.num_ics + 1:
-            print("best model evaluation")
-            if best_model is None:
-                best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
-                print("Begin best_model: {}".format(accuracies))
-            elif sum(metrics['valid_top1_acc'][-1]) > sum(accuracies):
-                best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
-                print("New best model: {}".format(accuracies))
-    metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(best_model, data.test_loader, device)
-    return metrics, best_model
-
 
 def sdn_loss(output, label, coeffs=None):
     total_loss = 0.0
@@ -586,147 +523,6 @@ def sdn_loss(output, label, coeffs=None):
         total_loss += float(coeffs[ic_id]) * af.get_loss_criterion()(output[ic_id], label)
     total_loss += af.get_loss_criterion()(output[-1], label)
     return total_loss
-
-
-# training with freezing previous layers and defrezing
-def iter_training_2(model, data, epochs, optimizer, scheduler, device='cpu'):
-    print("iter training 2")
-    augment = model.augment_training
-    metrics = {
-        'epoch_times': [],
-        'valid_top1_acc': [],
-        'valid_top3_acc': [],
-        'train_top1_acc': [],
-        'train_top3_acc': [],
-        'test_top1_acc': [],
-        'test_top3_acc': [],
-        'lrs': []
-    }
-    epoch_growth = [(i + 1) * epochs / (model.num_ics + 1) for i in range(model.num_ics)]
-    print("epoch growth: {}".format(epoch_growth))
-
-    def calc_inter_growth(array, last_epoch):
-        res = []
-        last = None
-        arr = array + [last_epoch]
-        for i in arr:
-            if last:
-                res.append(int((last + i) / 2))
-            last = i
-        return res
-
-    unfreeze_epochs = calc_inter_growth(epoch_growth, epochs)
-    print("unfreeze_epochs: {}".format(unfreeze_epochs))
-    max_coeffs = calc_coeff(model)
-
-    model.to(device)
-    model.to_train()
-
-    if model.prune:
-        loader = get_loader(data, False)
-        count_pruned = prune_skip_layer(model, model.keep_ratio, loader, sdn_loss, 0, device)
-    best_model, accuracies = None, None
-    for epoch in range(epochs):
-
-        epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
-
-        if epoch in epoch_growth:
-            for params in model.parameters(True):
-                params.require_grad = False
-            grown_layers = model.grow()
-            model.to(device)
-            optimizer.add_param_group({'params': grown_layers})
-            print("model grow")
-            if model.prune:
-                loader = get_loader(data, False)
-                count_pruned = prune_skip_layer(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
-
-        if epoch in unfreeze_epochs:
-            for params in model.parameters(True):
-                params.require_grad = True
-        if model.num_output == model.num_ics + 1:
-            print("best model evaluation")
-            if best_model is None:
-                best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
-                print("Begin best_model: {}".format(accuracies))
-            elif sum(metrics['valid_top1_acc'][-1]) > sum(accuracies):
-                best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
-                print("New best model: {}".format(accuracies))
-    metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(best_model, data.test_loader, device)
-    return metrics, best_model
-
-
-# same as 2 but with more and more epochs between the growings
-def iter_training_3(model, data, epochs, optimizer, scheduler, device='cpu'):
-    print("iter training 3")
-    augment = model.augment_training
-    metrics = {
-        'epoch_times': [],
-        'valid_top1_acc': [],
-        'valid_top3_acc': [],
-        'train_top1_acc': [],
-        'train_top3_acc': [],
-        'test_top1_acc': [],
-        'test_top3_acc': [],
-        'lrs': []
-    }
-    increase_value = epochs / (model.num_ics + 1)
-    print("increase value: {}".format(increase_value))
-    epoch_growth = [(i + 1) * increase_value for i in range(model.num_ics + 1)]
-    print("epoch increasing: {}".format(epoch_growth))
-    tmp = [0] + epoch_growth
-    epoch_growth = [25, 50, 100, 200]  # [sum(tmp[:i+2]) for i in range(len(tmp)-1)]
-    print("epoch growth: {}".format(epoch_growth))
-
-    def calc_inter_growth(array):
-        res = []
-        last = None
-        arr = array
-        for i in arr:
-            if last:
-                res.append(int((last + i) / 2))
-            last = i
-        return res
-
-    unfreeze_epochs = [33, 75, 125]  # calc_inter_growth(epoch_growth)
-    print("unfreeze_epochs: {}".format(unfreeze_epochs))
-    # max_coeffs = calc_coeff(model)
-
-    model.to(device)
-    model.to_train()
-
-    if model.prune:
-        loader = get_loader(data, False)
-        count_pruned = prune_skip_layer(model, model.keep_ratio, loader, sdn_loss, 0, device)
-    best_model, accuracies = None, None
-    for epoch in range(int(epoch_growth[-1])):
-        epoch_routine(model, data, optimizer, scheduler, epoch, int(epoch_growth[-1]), augment, metrics, device)
-
-        if epoch in epoch_growth[:-1]:
-            for params in model.parameters(True):
-                params.require_grad = False
-            grown_layers = model.grow()
-            model.to(device)
-            optimizer.add_param_group({'params': grown_layers})
-            print("model grow")
-            if model.prune:
-                loader = get_loader(data, False)
-                count_pruned = prune_skip_layer(model, model.keep_ratio, loader, sdn_loss, count_pruned, device)
-
-        if epoch in unfreeze_epochs:
-            for params in model.parameters(True):
-                params.require_grad = True
-        if model.num_output == model.num_ics + 1:
-            print("best model evaluation")
-            if best_model is None:
-                best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
-                print("Begin best_model: {}".format(accuracies))
-            elif sum(metrics['valid_top1_acc'][-1]) > sum(accuracies):
-                best_model, accuracies = copy.deepcopy(model), metrics['valid_top1_acc'][-1]
-                print("New best model: {}".format(accuracies))
-    metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(best_model, data.test_loader, device)
-    return metrics, best_model
-
 
 # grow when loss stagnate
 def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
@@ -783,7 +579,7 @@ def iter_training_4(model, data, epochs, optimizer, scheduler, device='cpu'):
 def epoch_routine(model, datas, optimizer, scheduler, epoch, epochs, augment, metrics, device):
     scheduler.step()
     cur_lr = af.get_lr(optimizer)
-    print('\nEpoch: {}/{}'.format(epoch, epochs))
+    
     print('cur_lr: {}'.format(cur_lr))
     print("scheduler state dict: {}".format(scheduler.state_dict()))
     max_coeffs = calc_coeff(model)
@@ -796,11 +592,10 @@ def epoch_routine(model, datas, optimizer, scheduler, epoch, epochs, augment, me
     loader = get_loader(datas, augment)
     losses = []
     for i, batch in enumerate(loader):
-        total_loss = sdn_training_step(optimizer, model, cur_coeffs, batch, device)
+        total_loss = sdn_training_step(optimizer, model, cur_coeffs, batch, device, epoch)
         losses.append(total_loss)
         if i % 100 == 0:
             print("Loss: {}".format(total_loss))
-
     top1_test, top3_test = sdn_test(model, datas.aug_valid_loader if augment else datas.valid_loader, device)
     end_time = time.time()
 
@@ -831,21 +626,15 @@ def calc_coeff(model):
 
 # max tau: % of the network for the IC -> if 3 outputs: 0.33, 0.66, 1
 
-def prune_skip_layer(model, keep_ratio, loader, loss, index_to_prune, device, reinit):
-    masks = snip.snip_skip_layers(model, keep_ratio, loader, loss, index_to_prune, device, reinit)
-    snip.apply_prune_mask_skip_layers(model, masks, index_to_prune)
+def prune_skip_layer(model, keep_ratio, loader, loss, index_to_prune, previous_masks, device, reinit):
+    n_masks = snip.snip_skip_layers(model, keep_ratio, loader, loss, index_to_prune, previous_masks, device, reinit)
+    snip.apply_prune_mask_skip_layers(model, n_masks, index_to_prune)
+    return n_masks
 
 def prune_iterative(model, k_r, min_ratio, steps, loader, loss, device, reinit):
     masks = snip.snip_bloc_iterative(model, k_r, min_ratio, steps, loader, loss, device, reinit)
     snip.apply_prune_mask_bloc_iterative(model, masks)
-    # mask_no_tensor = []
-    # for bloc in masks:
-    #     el = []
-    #     for tensor in bloc:
-    #         el.append(tensor.cpu().numpy())
-    #     mask_no_tensor.append(el)
-    # mask_no_tensor = np.array(mask_no_tensor)
-
+    
     return masks
 
 def prune2(layers, keep_ratio, loader, loss, device):

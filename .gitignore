@@ -10,6 +10,8 @@ venv/
 
 .idea
 
+.vscode
+
 ## the experiments are not needed
 
 confusion_experiments.py

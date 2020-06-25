@@ -17,6 +17,7 @@ import matplotlib
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.optim.optimizer import Optimizer, required
 
 matplotlib.use('Agg')
 
@@ -87,6 +88,66 @@ class MultiStepMultiLR(_LRScheduler):
         print("af scheduler: {}".format(lrs))
         return lrs
 
+class SGDForPruning(Optimizer):
+    def __init__(self, params, lr=required, momentum=0, dampening=0, weight_decay=0, nesterov=False):
+        if lr is not required and lr < 0.:
+            raise ValueError("Invalid learning rate: {}".format(lr))
+        if momentum < 0.0:
+            raise ValueError("Invalid momentum value: {}".format(momentum))
+        if weight_decay < 0.0:
+            raise ValueError("Invalid weight_decay value: {}".format(weight_decay))
+
+        defaults = dict(lr=lr, momentum=momentum, dampening=dampening,
+                        weight_decay=weight_decay, nesterov=nesterov)
+        if nesterov and (momentum <= 0 or dampening != 0):
+            raise ValueError("Nesterov momentum requires a momentum and zero dampening")
+        super(SGDForPruning, self).__init__(params, defaults)
+    
+    def __setstate__(self, state):
+        super(SGDForPruning, self).__setstate__(state)
+        for group in self.param_groups:
+            group.setdefault('nesterov', False)
+
+    @torch.no_grad()
+    def step(self, closure=None):
+        loss = None
+        if closure is not None:
+            with torch.enable_grad():
+                loss = closure()
+        
+        for group in self.param_groups:
+            weight_decay = group['weight_decay']
+            momentum = group['momentum']
+            dampening = group['dampening']
+            nesterov = group['nesterov']
+            
+            for i, p in enumerate(group['params']):
+                if p.grad is None:
+                    continue
+                d_p = p.grad
+                if weight_decay != 0:
+                    d_p = d_p.add(p, alpha=weight_decay)
+                if momentum != 0:
+                    param_state = self.state[p]
+                    if 'momentum_buffer' not in param_state:
+                        buf = param_state['momentum_buffer'] = torch.clone(d_p).detach()
+                    else:
+                        buf = param_state['momentum_buffer']
+                        buf.mul_(momentum).add(d_p, alpha=1-dampening)
+                    if nesterov:
+                        d_p = d_p.add(buf, alpha=momentum)
+                    else:
+                        d_p = buf
+                
+                #import pdb; pdb.set_trace()
+                # if i == 0:
+                #     print("0. p[0]: {}".format(p[0]))
+                buf[p==0.] = 0.
+                p.add_(d_p, alpha=-group['lr'])
+                # if i == 0:
+                #     print("1. p[0]: {}".format(p[0]))
+                #import pdb; pdb.set_trace()
+        return loss
 
 # flatten the output of conv layers for fully connected layers
 class Flatten(nn.Module):
@@ -257,8 +318,9 @@ def get_full_optimizer(model, lr_params, stepsize_params):
     milestones = stepsize_params[0]
     gammas = stepsize_params[1]
 
-    optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, momentum=momentum,
-                    weight_decay=weight_decay)
+    # optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, momentum=momentum,
+    #                 weight_decay=weight_decay)
+    optimizer = SGDForPruning(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, momentum=momentum, weight_decay=weight_decay)
     scheduler = MultiStepMultiLR(optimizer, milestones=milestones, gammas=gammas, last_epoch=epoch)
 
     return optimizer, scheduler
