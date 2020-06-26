@@ -451,30 +451,11 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
                     if epoch < _epoch_growth[i]:
                         steps.append(0)
                     else:
-                        v = [0 if e < _epoch_growth[i] or e > epoch else 1 for e in epoch_prune]
-                        print("ic_{} pruning count: {}".format(i, v))
+                        v = [0 if e < _epoch_growth[i] or e > epoch else 1 for e in epoch_prune]   
                         steps.append(sum(v)-1)
-                print("steps: {}".format(steps))
                 mask = prune_iterative(model, model.keep_ratio, params['min_ratio'], steps, loader, sdn_loss, device, reinit)
                 masks.append(mask)
-                # code for checking that the connections pruned are consistent at the different pruning times
-                if mask1 is not None:
-                    mask2 = mask
-                    for i in range(len(mask1)):
-                        flat01 = torch.tensor([y for x in mask1[i] for y in torch.flatten(x)])
-                        flat02 = torch.tensor([y for x in mask2[i] for y in torch.flatten(x)])
-                        kept = torch.sum(flat02)/len(flat02)
-                        print("kept{}: {}".format(i, kept))
-                        print("len1, len2: {}, {}".format(len(flat01), len(flat02)))
-                        a0 = sum([1 if a == 0 and b != 0 else 0 for a, b in zip(flat01, flat02)])
-                        print("num of elem in 1 not in 2 for bloc{}: {}".format(i, a0))
-                    mask1 = mask2
-                else:
-                    mask1 = mask
-                    for i in range(len(mask1)):
-                        flat0 = torch.tensor([y for x in mask1[i] for y in torch.flatten(x)])
-                        kept = torch.sum(flat0) / len(flat0)
-                        print("kept{}: {}".format(i, kept))
+                mask1 = mask
 
         epoch_routine(model, data, optimizer, scheduler, epoch, epochs, augment, metrics, device)
 
@@ -494,18 +475,7 @@ def iter_training_0(model, data, params, optimizer, scheduler, device='cpu'):
                     best_epoch = epoch
                     print("New best model: {}".format(accuracies))
         
-        blocks = snip.get_blocs(model)
-        print("blocs:")
-        for i, b in enumerate(blocks):
-            if i < model.num_output:
-                p_z = sum([torch.sum(layer.weight != 0) for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), b.modules())])
-                t_p = sum([layer.weight.nelement() for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), b.modules())])
-                print("    {} total: {}, non zero: {}, ratio: {:.2f}".format(i, t_p, p_z, float(p_z)/float(t_p)))
-        p_z = sum([torch.sum(layer.weight != 0) for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), model.modules())]) 
-        t_p = sum([layer.weight.nelement() for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), model.modules())])
-        p_z = p_z - 25610 if epoch < epoch_growth[-1] else p_z
-        t_p = t_p - 25610 if epoch < epoch_growth[-1] else t_p
-        print("total: {}, non zero: {}, ratio: {:.2f}".format(t_p, p_z, float(p_z)/float(t_p)))
+        af.print_sparsity(model)
 
     metrics['test_top1_acc'], metrics['test_top3_acc'] = sdn_test(best_model, data.test_loader, device)
     test_top1, _ = sdn_test(model, data.test_loader, device)

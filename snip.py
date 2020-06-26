@@ -118,8 +118,6 @@ def snip_skip_layers(model, keep_ratio, loader, loss, index_to_prune, previous_m
         for idy, layer in enumerate(bloc.modules()):
             if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear) and layer.weight_mask.grad is not None:
                 grads_abs.append(torch.abs(layer.weight_mask.grad))
-            # if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
-            #     print("{} layer: {}, grad: {}".format(idy, layer, layer.weight_mask.grad is not None))
         if len(grads_abs) == 0:
             masks.append([])
             continue
@@ -134,17 +132,10 @@ def snip_skip_layers(model, keep_ratio, loader, loss, index_to_prune, previous_m
         for g in grads_abs:
             keep_masks.append(((g / norm_factor) >= acceptable_score).float())
         masks.append(keep_masks)
-        sums = [x.flatten().sum() for x in keep_masks]
-        sums = sum(sums)
-        numelem = sum([x.numel() for x in keep_masks])
-        print("{} kept params: {}".format(idx, sums/numelem))
     
     if previous_masks is not None:
         for i in range(index_to_prune):
             masks[i] = previous_masks[i]
-    
-    # for mask in masks:
-    #     print("len mask: {}".format(len(mask)))
 
     return masks
 
@@ -170,30 +161,10 @@ def apply_prune_mask_skip_layers(model, masks, index_to_prune):
             
             layer.weight_mask = nn.Parameter(msk)
             layer.weight_mask.requires_grad = False
-            # print("layer id: {}, {}".format(layer, id(layer)))
             if isinstance(layer, nn.Linear):
                 layer.forward = types.MethodType(snip_forward_linear, layer) 
             if isinstance(layer, nn.Conv2d):
                 layer.forward = types.MethodType(snip_forward_conv2d, layer)             
-
-    for i, b in enumerate(blocks):
-        if i>index_to_prune:
-            break
-        p_z = sum([torch.sum(layer.weight != 0) for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), b.modules())]) 
-        #sum(p.numel() for p in b.parameters())
-        t_p = sum([layer.weight.nelement() for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), b.modules())])
-        #sum(len(list(filter(lambda x: x != 0., p.flatten()))) for p in b.parameters() if p.requires_grad)
-        print("{} total: {}, non zero: {}, ratio: {:.2f}".format(i, t_p, p_z, float(p_z)/float(t_p)))
-        # for layer in b.modules():
-        #     if isinstance(layer, (nn.Linear, nn.Conv2d)):
-        #         print("weight: {}".format(layer.weight))
-
-    total_param = sum([layer.weight.nelement() for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), model.modules())])
-    param_z = sum([torch.sum(layer.weight != 0) for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), model.modules())]) 
-    total_param = total_param-25610 if index_to_prune<3 else total_param
-    param_z = param_z-25610 if index_to_prune<3 else param_z
-    print("total param: {}\nparam_z: {}".format(total_param, param_z))
-    print("keep ratio: {}".format(float(param_z)/float(total_param)))
 
 def snip_bloc_iterative(model, keep_ratio, mini_ratio, steps, loader, loss, device='cpu', reinit=True):
     # mini_ratio is now an array for every bloc
@@ -223,12 +194,11 @@ def snip_bloc_iterative(model, keep_ratio, mini_ratio, steps, loader, loss, devi
 
     # ranger les gradients par blocs
     masks = []
-    for id, bloc in enumerate(blocks):
+    for idx, bloc in enumerate(blocks):
         grads_abs = []
         for layer in bloc.modules():
             if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear) and layer.weight_mask.grad is not None:
                 grads_abs.append(torch.abs(layer.weight_mask.grad))
-        # print("grad_abs: {}".format(grads_abs))
         if len(grads_abs) == 0:
             masks.append([])
             continue
@@ -236,10 +206,10 @@ def snip_bloc_iterative(model, keep_ratio, mini_ratio, steps, loader, loss, devi
         norm_factor = torch.sum(all_scores)
         all_scores.div_(norm_factor)
 
-        intern_keep_ratio = keep_ratio[id] ** (steps[id] + 1)
+        intern_keep_ratio = keep_ratio[idx] ** (steps[idx] + 1)
         if mini_ratio is not None:
-            intern_keep_ratio = intern_keep_ratio if intern_keep_ratio > mini_ratio[id] else mini_ratio[id]
-        print("keep ratio {}: {}".format(id, intern_keep_ratio))
+            intern_keep_ratio = intern_keep_ratio if intern_keep_ratio > mini_ratio[idx] else mini_ratio[idx]
+        print("keep ratio {}: {}".format(idx, intern_keep_ratio))
 
         num_params_to_keep = int(len(all_scores) * intern_keep_ratio)
         threshold, _ = torch.topk(all_scores, num_params_to_keep, sorted=True)
@@ -259,18 +229,18 @@ def apply_prune_mask_bloc_iterative(model, masks):
             bloc.modules()
         )
         mask = masks[id]
-        for layer, mask in zip(prunable_layers, mask):
-            assert(layer.weight.shape == mask.shape)
+        for layer, msk in zip(prunable_layers, mask):
+            assert(layer.weight.shape == msk.shape)
 
-            def hook_factory(mask):
-                def hook(grads):
-                    return grads * mask
-                return hook
-
-            layer.weight.data[mask == 0.] = 0.
-            layer.weight.register_hook(hook_factory(mask))
-
-
+            layer.weight.data[msk == 0.] = 0.
+            if hasattr(layer, 'weight_mask'):
+                msk = msk*layer.weight_mask
+            layer.weight_mask = nn.Parameter(msk)
+            layer.weight_mask.requires_grad = False
+            if isinstance(layer, nn.Linear):
+                layer.forward = types.MethodType(snip_forward_linear, layer) 
+            if isinstance(layer, nn.Conv2d):
+                layer.forward = types.MethodType(snip_forward_conv2d, layer)
 
 def get_blocs(_model):
     indexes = [0]
@@ -285,7 +255,6 @@ def get_blocs(_model):
             first += 1
         blocks.append(_model.layers[first:second])
     blocks[0].insert(0, _model.init_conv)
-    #print("num ics: {}, num outputs: {}".format(sum(_model.ics), _model.num_output))
     if sum(_model.ics)+1 == _model.num_output:
         blocks[-1].append(_model.end_layers)
     return blocks
