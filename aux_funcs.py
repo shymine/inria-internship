@@ -139,7 +139,7 @@ class SGDForPruning(Optimizer):
                         d_p = d_p.add(buf, alpha=momentum)
                     else:
                         d_p = buf
-                d_p[p==0.] = 0.
+                #d_p[p==0.] = 0.
                 p.add_(d_p, alpha=-group['lr'])
         return loss
 
@@ -312,9 +312,9 @@ def get_full_optimizer(model, lr_params, stepsize_params):
     milestones = stepsize_params[0]
     gammas = stepsize_params[1]
 
-    optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, momentum=momentum,
-                    weight_decay=weight_decay)
-    # optimizer = SGDForPruning(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, momentum=momentum, weight_decay=weight_decay)
+    # optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, momentum=momentum,
+    #                 weight_decay=weight_decay)
+    optimizer = SGDForPruning(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, momentum=momentum, weight_decay=weight_decay)
     scheduler = MultiStepMultiLR(optimizer, milestones=milestones, gammas=gammas, last_epoch=epoch)
 
     return optimizer, scheduler
