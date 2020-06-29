@@ -89,7 +89,8 @@ class MultiStepMultiLR(_LRScheduler):
         return lrs
 
 class SGDForPruning(Optimizer):
-    def __init__(self, params, lr=required, momentum=0, dampening=0, weight_decay=0, nesterov=False):
+
+    def __init__(self, params, lr=required, momentum=0., dampening=0., weight_decay=0., nesterov=False):
         if lr is not required and lr < 0.:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if momentum < 0.0:
@@ -138,15 +139,8 @@ class SGDForPruning(Optimizer):
                         d_p = d_p.add(buf, alpha=momentum)
                     else:
                         d_p = buf
-                
-                #import pdb; pdb.set_trace()
-                # if i == 0:
-                #     print("0. p[0]: {}".format(p[0]))
-                buf[p==0.] = 0.
+                d_p[p==0.] = 0.
                 p.add_(d_p, alpha=-group['lr'])
-                # if i == 0:
-                #     print("1. p[0]: {}".format(p[0]))
-                #import pdb; pdb.set_trace()
         return loss
 
 # flatten the output of conv layers for fully connected layers
