@@ -90,8 +90,9 @@ class MultiStepMultiLR(_LRScheduler):
 
 class SGDForPruning(Optimizer):
 
-    def __init__(self, params, lr=required, momentum=0., dampening=0., weight_decay=0., nesterov=False):
-        if lr is not required and lr < 0.:
+    def __init__(self, params, lr=required, momentum=0, dampening=0,
+                 weight_decay=0, nesterov=False):
+        if lr is not required and lr < 0.0:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if momentum < 0.0:
             raise ValueError("Invalid momentum value: {}".format(momentum))
@@ -103,7 +104,7 @@ class SGDForPruning(Optimizer):
         if nesterov and (momentum <= 0 or dampening != 0):
             raise ValueError("Nesterov momentum requires a momentum and zero dampening")
         super(SGDForPruning, self).__init__(params, defaults)
-    
+
     def __setstate__(self, state):
         super(SGDForPruning, self).__setstate__(state)
         for group in self.param_groups:
@@ -115,14 +116,14 @@ class SGDForPruning(Optimizer):
         if closure is not None:
             with torch.enable_grad():
                 loss = closure()
-        
+
         for group in self.param_groups:
             weight_decay = group['weight_decay']
             momentum = group['momentum']
             dampening = group['dampening']
             nesterov = group['nesterov']
-            
-            for i, p in enumerate(group['params']):
+
+            for p in group['params']:
                 if p.grad is None:
                     continue
                 d_p = p.grad
@@ -134,12 +135,12 @@ class SGDForPruning(Optimizer):
                         buf = param_state['momentum_buffer'] = torch.clone(d_p).detach()
                     else:
                         buf = param_state['momentum_buffer']
-                        buf.mul_(momentum).add(d_p, alpha=1-dampening)
+                        buf.mul_(momentum).add_(d_p, alpha=1 - dampening)
                     if nesterov:
                         d_p = d_p.add(buf, alpha=momentum)
                     else:
                         d_p = buf
-                #d_p[p==0.] = 0.
+                # d_p[p==0.] = 0.
                 p.add_(d_p, alpha=-group['lr'])
         return loss
 
@@ -312,8 +313,7 @@ def get_full_optimizer(model, lr_params, stepsize_params):
     milestones = stepsize_params[0]
     gammas = stepsize_params[1]
 
-    # optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, momentum=momentum,
-    #                 weight_decay=weight_decay)
+    # optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, momentum=momentum, weight_decay=weight_decay)
     optimizer = SGDForPruning(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, momentum=momentum, weight_decay=weight_decay)
     scheduler = MultiStepMultiLR(optimizer, milestones=milestones, gammas=gammas, last_epoch=epoch)
 
