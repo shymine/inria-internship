@@ -103,8 +103,9 @@ def main(mode, load):
     #af.print_acc(arr, extend=False)
     af.plot_acc([m[1] for m in arr])
     #print the numbers of paramters
-    print("number of parameters: {}".format([sum(p.numel() for p in model.parameters()) for model in [m[0] for m in arr]]))
-    print("number of trainable parameters: {}".format([sum(filter(lambda x: x != 0., p.flatten()) for p in model.parameters() if p.requires_grad) for model in [m[0] for m in arr]]))
+    for m in [t[0] for t in arr]:
+        print("")
+        af.print_sparsity(m)
 
 if __name__ == '__main__':
     try:
