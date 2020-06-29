@@ -81,7 +81,6 @@ def apply_prune_mask(model, masks):
 
 
 def snip_skip_layers(model, keep_ratio, loader, loss, index_to_prune, previous_masks, device='cpu', reinit=True):
-
     inputs, targets = next(iter(loader))
     inputs, targets = inputs.to(device), targets.to(device)
     _model = copy.deepcopy(model)
@@ -115,7 +114,7 @@ def snip_skip_layers(model, keep_ratio, loader, loss, index_to_prune, previous_m
             masks.append([])
             continue
         grads_abs = []
-        for idy, layer in enumerate(bloc.modules()):
+        for layer in bloc.modules():
             if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear) and layer.weight_mask.grad is not None:
                 grads_abs.append(torch.abs(layer.weight_mask.grad))
         if len(grads_abs) == 0:
@@ -148,10 +147,8 @@ def apply_prune_mask_skip_layers(model, masks, index_to_prune):
     for idx, bloc in enumerate(blocks):
         if idx != index_to_prune:
             continue
-        prunable_layers = filter(
-            lambda layer: isinstance(layer, (nn.Linear, nn.Conv2d)),
-            bloc.modules()
-        )
+        prunable_layers = filter(lambda layer: isinstance(layer, (nn.Linear, nn.Conv2d)),
+            bloc.modules())
         mask = masks[idx]
 
         for layer, msk in zip(prunable_layers, mask):
@@ -172,9 +169,7 @@ def snip_bloc_iterative(model, keep_ratio, mini_ratio, steps, loader, loss, devi
     inputs, targets = inputs.to(device), targets.to(device)
     _model = copy.deepcopy(model)
 
-    # détection et répartition des blocs
     blocks = get_blocs(_model)
-    # le tableau blocks contient les différentes layers comprisent entre les IC
     for layer in _model.modules():
         conv2 = isinstance(layer, nn.Conv2d)
         lin = isinstance(layer, nn.Linear)
@@ -233,6 +228,7 @@ def apply_prune_mask_bloc_iterative(model, masks):
             assert(layer.weight.shape == msk.shape)
 
             layer.weight.data[msk == 0.] = 0.
+            # fuse the weight masks
             if hasattr(layer, 'weight_mask'):
                 msk = msk*layer.weight_mask
             layer.weight_mask = nn.Parameter(msk)

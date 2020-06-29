@@ -48,6 +48,8 @@ def train_model(models_path, cr_params, device, num=0):
                                            optimizer, scheduler, device)
     _link_metrics(params, metrics)
 
+    af.print_sparsity(best_model)
+
     arcs.save_model(best_model, params, models_path, params['name'], epoch=-1)
     print("test acc: {}, last val: {}".format(params['test_top1_acc'], params['valid_top1_acc'][-1]))
     return best_model, params
@@ -83,11 +85,11 @@ def main(mode, load):
     device = af.get_pytorch_device()
     create_params = [
         # type, training, (prune?, keep_ratio for ics, batch size)
-        ('dense', '0', (True, [0.4, 0.3, 0.2, 0.1], 128)),
-        ('dense', '0', (True, [0.4, 0.3, 0.2, 0.1], 128)),
-        ('dense', '0', (True, [0.4, 0.3, 0.2, 0.1], 128)),
-        ('dense', '0', (True, [0.4, 0.3, 0.2, 0.1], 128)),
-        ('dense', '0', (True, [0.4, 0.3, 0.2, 0.1], 128))
+        ('dense', '0', (True, [0.2, 0.2, 0.2, 0.2], 128)),
+        ('dense', '0', (True, [0.2, 0.2, 0.2, 0.2], 128)),
+        ('dense', '0', (True, [0.2, 0.2, 0.2, 0.2], 128)),
+        ('dense', '0', (True, [0.2, 0.2, 0.2, 0.2], 128)),
+        ('dense', '0', (True, [0.2, 0.2, 0.2, 0.2], 128))
     ]
     create_bool = [
         1 if True
