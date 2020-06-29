@@ -86,6 +86,10 @@ def main(mode, load):
     create_params = [
         # type, training, (prune?, keep_ratio for ics, batch size)
         ('dense', '0', (True, [0.8, 0.8, 0.8, 0.8], 128)),
+        ('dense', '0', (True, [0.8, 0.8, 0.8, 0.8], 128)),
+        ('dense', '0', (True, [0.8, 0.8, 0.8, 0.8], 128)),
+        ('dense', '0', (True, [0.8, 0.8, 0.8, 0.8], 128)),
+        ('dense', '0', (True, [0.8, 0.8, 0.8, 0.8], 128))
     ]
     create_bool = [
         1 if True
