@@ -140,7 +140,7 @@ class SGDForPruning(Optimizer):
                         d_p = d_p.add(buf, alpha=momentum)
                     else:
                         d_p = buf
-                # d_p[p==0.] = 0.
+                d_p[p==0.] = 0.
                 p.add_(d_p, alpha=-group['lr'])
         return loss
 
