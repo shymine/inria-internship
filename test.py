@@ -24,9 +24,9 @@ def main():
         model, (param['learning_rate'], param['weight_decay'], param['momentum'], -1), ([4], [0.1])
     )
     train_params = dict(
-        epochs=5,
-        epoch_growth=[2, 3, 4],
-        epoch_prune=[1, 2, 3, 4],
+        epochs=10,
+        epoch_growth=[2, 4, 6],
+        epoch_prune=[1, 3, 5, 7, 8],
         prune_batch_size=128,
         prune_type="0",
         reinit=False,
