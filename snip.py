@@ -6,7 +6,6 @@ from functools import reduce
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.nn.utils.prune as prune
 
 
 def snip_forward_conv2d(self, x):

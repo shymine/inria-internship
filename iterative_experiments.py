@@ -42,6 +42,9 @@ def train_model(models_path, cr_params, device, num=0):
         reinit=False,
         min_ratio=[0.1, 0.1, 0.1, 0.1]  # not needed if skip layers, minimum for the iterative pruning
     )
+
+    params['epoch_growth']=train_params['epoch_growth']
+    params['epoch_prune']=train_params['epoch_prune']
     optimizer, scheduler = af.get_full_optimizer(model, opti_param, lr_schedule_params)
     metrics, best_model = model.train_func(model, dataset,
                                            train_params,

@@ -24,20 +24,20 @@ def main():
         model, (param['learning_rate'], param['weight_decay'], param['momentum'], -1), ([4], [0.1])
     )
     train_params = dict(
-        epochs=10,
-        epoch_growth=[2, 4, 6],
-        epoch_prune=[1, 3, 5, 7, 8, 9],
+        epochs=5,
+        epoch_growth=[2, 3, 4],
+        epoch_prune=[1, 2, 3, 4],
         prune_batch_size=128,
-        prune_type="2",
+        prune_type="0",
         reinit=False,
         min_ratio=[0.5, 0.4, 0.3, 0.2],
     )
     params, best_model = model_funcs.iter_training_0(
         model, dataset, train_params, optimizer, scheduler, device
     )
-
+    params['epoch_prune'] = train_params['epoch_prune']
     af.print_sparsity(best_model)
-
+    af.plot_acc([params])
 
 if __name__ == "__main__":
     main()

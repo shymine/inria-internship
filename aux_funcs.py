@@ -656,6 +656,10 @@ def plot_acc(arr):
         ax.plot([i for i in range(len(acc))],
                 tr[3],
                 label="final output")
+        
+        for epoch_prune in m['epoch_prune']:
+            ax.axvline(x=epoch_prune)
+
         figs.append(fig)
     name = time.asctime(time.localtime(time.time())).replace(" ", "_")
     if not os.path.exists("results/{}".format(name)):
