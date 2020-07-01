@@ -26,7 +26,7 @@ def main():
     train_params = dict(
         epochs=10,
         epoch_growth=[2, 4, 6],
-        epoch_prune=[1, 3, 5, 7, 8, 9],
+        epoch_prune=[1, 3, 5, 7, 8],
         prune_batch_size=128,
         prune_type="2",
         reinit=False,
