@@ -88,11 +88,11 @@ def main(mode, load):
     device = af.get_pytorch_device()
     create_params = [
         # type, training, (prune?, keep_ratio for ics, batch size)
-        ('dense', '0', (True, [0.23, 0.23, 0.23, 0.23], 128)),
-        ('dense', '0', (True, [0.23, 0.23, 0.23, 0.23], 128)),
-        ('dense', '0', (True, [0.23, 0.23, 0.23, 0.23], 128)),
-        ('dense', '0', (True, [0.23, 0.23, 0.23, 0.23], 128)),
-        ('dense', '0', (True, [0.23, 0.23, 0.23, 0.23], 128))
+        ('iterative', '0', (False, [0.23, 0.23, 0.23, 0.23], 128)),
+        ('iterative', '0', (True, [0.8, 0.8, 0.8, 0.8], 128)),
+        ('iterative', '0', (True, [0.6, 0.6, 0.6, 0.6], 128)),
+        ('iterative', '0', (True, [0.4, 0.4, 0.4, 0.4], 128)),
+        ('iterative', '0', (True, [0.2, 0.2, 0.2, 0.2], 128))
     ]
     create_bool = [
         1 if True
@@ -104,8 +104,8 @@ def main(mode, load):
     else:
         arr = list(multi_experiments(models_path, zip(create_params, create_bool), device))
     #af.print_acc(arr, groups=[5], extend=True)
-    af.print_acc(arr, extend=True)
-    #af.print_acc(arr, extend=False)
+    #af.print_acc(arr, extend=True)
+    af.print_acc(arr, extend=False)
     af.plot_acc([m[1] for m in arr])
     #print the numbers of paramters
     for m in [t[0] for t in arr]:

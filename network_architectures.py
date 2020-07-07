@@ -18,12 +18,13 @@ from architectures.SDNs.ResNet_Baseline import ResNet_Baseline
 from architectures.SDNs.ResNet_SDN import ResNet_SDN
 from architectures.SDNs.VGG_SDN import VGG_SDN
 from architectures.SDNs.WideResNet_SDN import WideResNet_SDN
+from architectures.SDNs.DenseNet import DenseNet
 
 
-def save_networks(model_name, model_params, models_path, save_type):
+def save_networks(model_name, model_params, models_path, save_type, return_model=False):
     cnn_name = model_name + '_cnn'
     sdn_name = model_name + '_sdn'
-
+    model = None
     if 'c' in save_type:
         print('Saving CNN...')
         model_params['architecture'] = 'cnn'
@@ -58,6 +59,8 @@ def save_networks(model_name, model_params, models_path, save_type):
 
         save_model(model, model_params, models_path, sdn_name, epoch=0)
 
+    if return_model:
+        return model
     return cnn_name, sdn_name
 
 
@@ -89,7 +92,7 @@ def create_vgg16bn(models_path, task, save_type, get_params=False):
     return save_networks(model_name, model_params, models_path, save_type)
 
 
-def create_resnet56(models_path, task, save_type, get_params=False):
+def create_resnet56(models_path, task, save_type, get_params=False, return_model=False):
     print('Creating resnet56 untrained {} models...'.format(task))
     model_params = get_task_params(task)
     model_params['block_type'] = 'basic'
@@ -107,8 +110,11 @@ def create_resnet56(models_path, task, save_type, get_params=False):
 
     if get_params:
         return model_params
-
-    return save_networks(model_name, model_params, models_path, save_type)
+    tmp = save_networks(model_name, model_params, models_path, save_type)
+    if return_model:
+        model = tmp
+        return model, model_params
+    return tmp
 
 
 def create_wideresnet32_4(models_path, task, save_type, get_params=False):
@@ -185,6 +191,37 @@ def create_resnet_iterative(models_path, type="full", mode=None, prune=(False, 0
 
     save_model(model, model_params, models_path, model_name, 0)
     return model_name if return_name else model, model_params
+
+def create_dense_iterative(models_path, prune):
+    model_name = '{}_dense'.format('cifar10')
+    model_params = {
+        'network_type' : 'dense_iterative',
+        'augment' : True,
+        'init_weights' : True,
+        'momentum' : 0.9,
+        'weight_decay' : 0.0001,
+        'learning_rate' : 0.01,
+        'epochs' : 250,
+        'milestones' : [120, 160, 180],
+        'gammas' : [0.1, 0.01, 0.01],
+        'base_model' : model_name,
+        'size' : 15,
+        'ics' : [
+            0,0,0,1,
+            0,0,0,1,
+            0,0,0,1,
+            0,0,0
+        ],
+        'keep_ratio' : prune[0],
+        'min_ratio' : prune[1],
+        'prune_type' : prune[2],
+        **get_task_params('cifar10')
+    }
+
+    model = DenseNet(model_params['size'], model_params['ics'], model_params['init_weights'])
+
+    save_model(model, model_params, models_path, model_name, 0)
+    return model, model_params
 
 
 def get_task_params(task):
