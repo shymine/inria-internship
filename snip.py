@@ -137,7 +137,6 @@ def snip_skip_layers(model, keep_ratio, loader, loss, index_to_prune, previous_m
 
     return masks
 
-
 def apply_prune_mask_skip_layers(model, masks, index_to_prune):
     if masks is None:
         return
@@ -253,3 +252,43 @@ def get_blocs(_model):
     if sum(_model.ics)+1 == _model.num_output:
         blocks[-1].append(_model.end_layers)
     return blocks
+
+def snip_skip_dense(model, keep_ratio, keep_dense, loader, loss, index_to_prune, previous_masks, device):
+    inputs, targets = next(iter(loader))
+    inputs, targets = inputs.to(device), targets.to(device)
+    _model = copy.deepcopy(model)
+
+    blocks = get_blocs(_model)
+    if index_to_prune >= len(blocks):
+        print("index out of bloc range: index {}, number of blocks {}".format(index_to_prune, len(blocks)))
+        return None
+    for layer in _model.modules():
+        conv2 = isinstance(layer, nn.Conv2d)
+        lin = isinstance(layer, nn.Linear)
+        if conv2 or lin:
+            layer.weight_mask = nn.Parameter(torch.ones_like(layer.weight))
+            layer.weight.requires_grad = False
+            if conv2:
+                layer.forward = types.MethodType(snip_forward_conv2d, layer)
+            if lin:
+                layer.forward = types.MethodType(snip_forward_linear, layer)
+    
+    _model.to(device)
+    _model.zero_grad()
+    outputs = _model(inputs)
+    total_loss = loss(outputs, targets)
+    total_loss.backward()
+
+    masks = []
+    for idx, bloc in enumerate(blocks):
+        if idx != index_to_prune:
+            masks.append([])
+            continue
+        # prune the dense connections
+        grads_abs_dense = []
+        for layer in bloc.modules():
+            conv = isinstance(layer, nn.Conv2d)
+            lin = isinstance(layer, nn.Linear)
+            if conv and layer.in_channel != 16:
+                print("layer with dense connection: {}, {}".format(layer, layer.weight_mask.grad.shape))
+                grads_abs_dense = 

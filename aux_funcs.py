@@ -668,23 +668,30 @@ def plot_acc(arr):
         fig.savefig("results/{}/{}".format(name, i))
 
 
-def print_sparsity(model):
+def print_sparsity(model, mask=False):
     blocks = snip.get_blocs(model)
-    grown_index = -1
+    #grown_index = -1
     print("blocks:")
     for i, b in enumerate(blocks):
         if len(b)==0:
             break
-        grown_index += 1
-        p_z = sum([torch.sum(layer.weight != 0) for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), b.modules())]) 
-        t_p = sum([layer.weight.nelement() for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), b.modules())])
+        #grown_index += 1
+        if mask:
+            p_z = sum([torch.sum(layer.weight_mask != 0) for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), b.modules())]) 
+            t_p = sum([layer.weight_mask.nelement() for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), b.modules())])
+        else:
+            p_z = sum([torch.sum(layer.weight != 0) for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), b.modules())]) 
+            t_p = sum([layer.weight.nelement() for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), b.modules())])
         print("    {} total: {}, non zero: {}, ratio: {:.2f}".format(i, t_p, p_z, float(p_z)/float(t_p)))
-        
-    total_param = sum([layer.weight.nelement() for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), model.modules())])
-    param_z = sum([torch.sum(layer.weight != 0) for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), model.modules())]) 
+    
+    if mask:
+        total_param = sum([layer.weight_mask.nelement() for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), model.modules())])
+        param_z = sum([torch.sum(layer.weight_mask != 0) for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), model.modules())]) 
+    else:
+        total_param = sum([layer.weight.nelement() for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), model.modules())])
+        param_z = sum([torch.sum(layer.weight != 0) for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), model.modules())]) 
 
     final_layers_param = sum(layer.weight.nelement() for layer in filter(lambda l: isinstance(l, (nn.Conv2d, nn.Linear)), model.end_layers.modules()))
     total_param = total_param-final_layers_param if len(blocks[-1]) == 0 else total_param
     param_z = param_z-final_layers_param if len(blocks[-1]) == 0 else param_z
     print("total: {}, non_zero: {}, ratio: {}".format(total_param, param_z, float(param_z)/float(total_param)))
-
