@@ -58,7 +58,6 @@ def save_networks(model_name, model_params, models_path, save_type, return_model
             model = MobileNet_SDN(model_params)
 
         save_model(model, model_params, models_path, sdn_name, epoch=0)
-
     if return_model:
         return model
     return cnn_name, sdn_name
@@ -110,7 +109,7 @@ def create_resnet56(models_path, task, save_type, get_params=False, return_model
 
     if get_params:
         return model_params
-    tmp = save_networks(model_name, model_params, models_path, save_type)
+    tmp = save_networks(model_name, model_params, models_path, save_type, return_model=return_model)
     if return_model:
         model = tmp
         return model, model_params

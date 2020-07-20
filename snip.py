@@ -291,4 +291,4 @@ def snip_skip_dense(model, keep_ratio, keep_dense, loader, loss, index_to_prune,
             lin = isinstance(layer, nn.Linear)
             if conv and layer.in_channel != 16:
                 print("layer with dense connection: {}, {}".format(layer, layer.weight_mask.grad.shape))
-                grads_abs_dense = 
+                #grads_abs_dense = 0 # TODO:dissociate dense and normal connections

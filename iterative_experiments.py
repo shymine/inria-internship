@@ -36,11 +36,11 @@ def train_model(models_path, cr_params, device, num=0):
     train_params = dict(
         epochs=params['epochs'],
         epoch_growth=[25, 50, 75],
-        epoch_prune=[10, 35, 60, 85],  #,[10, 35, 60, 85, 110, 135, 160]
+        epoch_prune=[10, 35, 60, 85, 110, 135, 160],  #[10, 35, 60, 85],
         prune_batch_size=pruning[2],
-        prune_type='0',  # 0 skip layer, 1 normal full, 2 iterative
+        prune_type='2',  # 0 skip layer, 1 normal full, 2 iterative
         reinit=False,
-        min_ratio=[0.1, 0.1, 0.1, 0.1]  # not needed if skip layers, minimum for the iterative pruning
+        min_ratio=[0.4, 0.2, 0.1, 0.05]  # not needed if skip layers, minimum for the iterative pruning
     )
 
     params['epoch_growth']=train_params['epoch_growth']
@@ -88,11 +88,10 @@ def main(mode, load):
     device = af.get_pytorch_device()
     create_params = [
         # type, training, (prune?, keep_ratio for ics, batch size)
-        ('iterative', '0', (False, [0.23, 0.23, 0.23, 0.23], 128)),
-        ('iterative', '0', (True, [0.8, 0.8, 0.8, 0.8], 128)),
-        ('iterative', '0', (True, [0.6, 0.6, 0.6, 0.6], 128)),
-        ('iterative', '0', (True, [0.4, 0.4, 0.4, 0.4], 128)),
-        ('iterative', '0', (True, [0.2, 0.2, 0.2, 0.2], 128))
+        ('iterative', '0', (True, [0.73, 0.58, 0.46, 0.36], 128)),
+        ('iterative', '0', (True, [0.73, 0.58, 0.46, 0.36], 128)),
+        ('iterative', '0', (True, [0.73, 0.58, 0.46, 0.36], 128)),
+        ('iterative', '0', (True, [0.73, 0.58, 0.46, 0.36], 128))
     ]
     create_bool = [
         1 if True

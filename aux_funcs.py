@@ -12,6 +12,7 @@ import random
 import sys
 import time
 import statistics
+from functools import reduce
 
 import matplotlib
 import numpy as np
@@ -695,3 +696,112 @@ def print_sparsity(model, mask=False):
     total_param = total_param-final_layers_param if len(blocks[-1]) == 0 else total_param
     param_z = param_z-final_layers_param if len(blocks[-1]) == 0 else param_z
     print("total: {}, non_zero: {}, ratio: {}".format(total_param, param_z, float(param_z)/float(total_param)))
+
+def connection_importance(model):
+    print("truc")
+    distances = [[] for _ in range(len(model.layers)-1)]
+    for cell in model.layers:
+        nb_input = cell.layers[0]
+    # TODO: connection importance
+
+def calculate_flops(model, input_shape):
+    def flop_linear(layer):
+        if layer.bias is not None:
+            flops = 2*layer.in_features*layer.out_features
+        else:
+            flops = layer.out_features*(2*layer.in_features - 1)
+        if hasattr(layer, 'weight_mask'):
+            flops -= sum(layer.weight_mask.flatten()==0.).item()
+        return flops
+    def flop_conv2d(layer, **kwargs):
+        # same calculation for pooling
+        in_shape = kwargs['in_shape']
+        if isinstance(layer.kernel_size, int):
+            n = in_shape[0] * layer.kernel_size * layer.kernel_size
+        else: 
+            n = in_shape[0]*layer.kernel_size[0]*layer.kernel_size[1]
+        flops_per_instance = 2*n-1
+        if hasattr(layer, 'weight_mask'):
+            flops_per_instance -= sum(layer.weight_mask.flatten()==0.).item()
+
+        # print("pad: {}, dil: {}, stride: {}".format(layer.padding, layer.dilation if hasattr(layer, 'dilation') else None, layer.stride))
+        if isinstance(layer.kernel_size, int):
+            num_instances_per_filter = math.floor(size_func(in_shape[1], layer.padding, layer.dilation if hasattr(layer, 'dilation') else 1, layer.kernel_size, layer.stride))
+            num_instances_per_filter *= math.floor(size_func(in_shape[2], layer.padding, layer.dilation if hasattr(layer, 'dilation') else 1, layer.kernel_size, layer.stride))
+        else:
+            num_instances_per_filter = math.floor(size_func(in_shape[1], layer.padding[0], layer.dilation[0], layer.kernel_size[0], layer.stride[0]))
+            num_instances_per_filter *= math.floor(size_func(in_shape[2], layer.padding[1], layer.dilation[1], layer.kernel_size[1], layer.stride[1]))
+        flops_per_filter = num_instances_per_filter * flops_per_instance
+        if isinstance(layer, nn.Conv2d):
+            flops = flops_per_filter*layer.out_channels
+        else:
+            flops = flops_per_filter*in_shape[0]
+        if hasattr(layer, 'bias') and layer.bias is not None:
+            flops += layer.out_channels
+        return flops
+    def flop_relu(input_shape):
+        return reduce(lambda x,y: x*y, input_shape)
+    
+    def size_func(in_shape, padding, dilation, kernel_size, stride):
+        return ((in_shape + 2*padding - dilation*(kernel_size-1)-1)/stride)+1
+
+    in_shape = input_shape
+    flops = 0
+    ic_buffer = []
+    ic = None
+    for layer in model.modules():
+        if isinstance(layer, InternalClassifier):
+            ic_buffer.append([layer, in_shape])
+            ic = 0
+            continue
+        if ic is not None:
+            ic += 1
+            if ic == 3:
+                ic = None
+            continue
+        linear = isinstance(layer, nn.Linear)
+        conv2d = isinstance(layer, (nn.Conv2d, nn.MaxPool2d, nn.AvgPool2d))
+        relu = isinstance(layer, nn.ReLU)
+        if linear or conv2d or relu:
+            # print("input_shape: {}, {}".format(in_shape, layer))
+            # print("input_shape: {}".format(in_shape))
+            flops += flop_linear(layer) if linear else flop_conv2d(layer, in_shape=in_shape) if conv2d else flop_relu(in_shape)
+            if conv2d:
+                if isinstance(layer, nn.Conv2d) and layer.padding[0] != 0.:
+                    in_shape = (
+                        layer.out_channels,
+                        math.floor(size_func(in_shape[1], layer.padding[0], layer.dilation[0], layer.kernel_size[0], layer.stride[0])),
+                        math.floor(size_func(in_shape[2], layer.padding[1], layer.dilation[1], layer.kernel_size[1], layer.stride[1]))
+                    )
+                elif isinstance(layer, (nn.MaxPool2d, nn.AvgPool2d)):
+                        in_shape = (
+                            in_shape[0],
+                            math.floor(size_func(in_shape[1], layer.padding, layer.dilation if hasattr(layer, 'dilation') else 1, layer.kernel_size, layer.stride)),
+                            math.floor(size_func(in_shape[2], layer.padding, layer.dilation if hasattr(layer, 'dilation') else 1, layer.kernel_size, layer.stride))
+                        )
+                    
+    # print("IC")
+    for ic, in_shape in ic_buffer:
+        for layer in ic.modules():
+            linear = isinstance(layer, nn.Linear)
+            conv2d = isinstance(layer, (nn.Conv2d, nn.MaxPool2d, nn.AvgPool2d))
+            relu = isinstance(layer, nn.ReLU)
+            if linear or conv2d or relu:
+                # print("input_shape: {}, {}".format(in_shape, layer))
+                # print("input_shape: {}".format(in_shape))
+                flops += flop_linear(layer) if linear else flop_conv2d(layer, in_shape=in_shape) if conv2d else flop_relu(in_shape)
+                if conv2d:
+                    if isinstance(layer, nn.Conv2d):
+                        in_shape = (
+                            layer.out_channels,
+                            math.floor(size_func(in_shape[1], layer.padding[0], layer.dilation[0], layer.kernel_size[0], layer.stride[0])),
+                            math.floor(size_func(in_shape[2], layer.padding[1], layer.dilation[1], layer.kernel_size[1], layer.stride[1]))
+                        )
+                    elif isinstance(layer, nn.AvgPool2d): # Avg as it is the last pooling method used and that it should take the same input as MaxPool
+                        in_shape = (
+                            in_shape[0],
+                            math.floor(size_func(in_shape[1], layer.padding, layer.dilation if hasattr(layer, 'dilation') else 1, layer.kernel_size, layer.stride)),
+                            math.floor(size_func(in_shape[2], layer.padding, layer.dilation if hasattr(layer, 'dilation') else 1, layer.kernel_size, layer.stride))
+                        )
+    return flops
+
