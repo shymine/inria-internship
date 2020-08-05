@@ -8,8 +8,8 @@ import network_architectures as arcs
 
 
 def train_model(models_path, cr_params, device, num=0):
-    type, mode, pruning = cr_params
-    model, params = arcs.create_resnet_iterative(models_path, type, mode, pruning, False)
+    type, mode, pruning, ics = cr_params
+    model, params = arcs.create_resnet_iterative(models_path, type, mode, pruning, ics=ics, False)
     dataset = af.get_dataset('cifar10')
     params['name'] = params['base_model'] + '_{}_{}'.format(type, mode)
     if model.prune:
@@ -40,7 +40,7 @@ def train_model(models_path, cr_params, device, num=0):
         prune_batch_size=pruning[2],
         prune_type='2',  # 0 skip layer, 1 normal full, 2 iterative
         reinit=False,
-        min_ratio=[0.4, 0.2, 0.1, 0.05]  # not needed if skip layers, minimum for the iterative pruning
+        min_ratio=[0.3, 0.1, 0.05, 0.05]  # not needed if skip layers, minimum for the iterative pruning
     )
 
     params['epoch_growth']=train_params['epoch_growth']
@@ -88,10 +88,12 @@ def main(mode, load):
     device = af.get_pytorch_device()
     create_params = [
         # type, training, (prune?, keep_ratio for ics, batch size)
-        ('iterative', '0', (True, [0.73, 0.58, 0.46, 0.36], 128)),
-        ('iterative', '0', (True, [0.73, 0.58, 0.46, 0.36], 128)),
-        ('iterative', '0', (True, [0.73, 0.58, 0.46, 0.36], 128)),
-        ('iterative', '0', (True, [0.73, 0.58, 0.46, 0.36], 128))
+        # ('dense', '0', (True, [0.75, 0.66, 0.58, 0.46], 128), [0, 0, 1, 0, 0, 1, 0, 1, 0])
+        ('dense', '0', (False, [0.66, 0.46, 0.36, 0.36], 128), [0, 1, 0, 1, 0, 1, 0]),
+        ('dense', '0', (False, [0.66, 0.46, 0.36, 0.36], 128), [0, 1, 0, 1, 0, 1, 0]),
+        ('dense', '0', (False, [0.66, 0.46, 0.36, 0.36], 128), [0, 1, 0, 1, 0, 1, 0]),
+        ('dense', '0', (False, [0.66, 0.46, 0.36, 0.36], 128), [0, 1, 0, 1, 0, 1, 0]),
+        ('dense', '0', (False, [0.66, 0.46, 0.36, 0.36], 128), [0, 1, 0, 1, 0, 1, 0]),
     ]
     create_bool = [
         1 if True
@@ -103,13 +105,32 @@ def main(mode, load):
     else:
         arr = list(multi_experiments(models_path, zip(create_params, create_bool), device))
     #af.print_acc(arr, groups=[5], extend=True)
-    #af.print_acc(arr, extend=True)
-    af.print_acc(arr, extend=False)
-    af.plot_acc([m[1] for m in arr])
+    af.print_acc(arr, extend=True)
+    #af.print_acc(arr, extend=False)
+    #af.plot_acc([m[1] for m in arr])
     #print the numbers of paramters
     for m in [t[0] for t in arr]:
         print("")
-        af.print_sparsity(m)
+        print("flops: {}".format(af.calculate_flops(m, (3,32,32))))
+    for m, p in arr:
+        arcs.save_model(m, p, models_path, p['name'], -1)
+    print("model: {}".format(arr[0][0]))
+    # loads = [
+    #     'cifar10_resnet_dense_dense_0_prune_[75.0, 66.0, 57.9, 46.0]',
+    #     'cifar10_resnet_iterative_iterative_0_prune_[20.0, 20.0, 20.0, 20.0]',
+    #     'cifar10_resnet_iterative_iterative_0_prune_[40.0, 40.0, 40.0, 40.0]',
+    #     'cifar10_resnet_iterative_iterative_0_prune_[60.0, 60.0, 60.0, 60.0]',
+    #     'cifar10_resnet_iterative_iterative_0_prune_[80.0, 80.0, 80.0, 80.0]'
+    # ]
+    # arr = [arcs.load_model(models_path, m, -1) for m in loads]
+    
+    # print("state_dict: {}".format(arr[0][0].state_dict()))
+
+    # for m in [t[0] for t in arr]:
+    #     print("")
+    #     af.print_sparsity(m, True)
+    #     print("flops: {}".format(af.calculate_flops(m, (3,32,32))))
+
 
 if __name__ == '__main__':
     try:

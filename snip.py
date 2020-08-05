@@ -153,8 +153,7 @@ def apply_prune_mask_skip_layers(model, masks, index_to_prune):
             assert (layer.weight.shape == msk.shape)
 
             layer.weight.data[msk == 0.] = 0.
-            
-            layer.weight_mask = nn.Parameter(msk)
+            layer.register_parameter('weight_mask', nn.Parameter(msk))
             layer.weight_mask.requires_grad = False
             if isinstance(layer, nn.Linear):
                 layer.forward = types.MethodType(snip_forward_linear, layer) 
@@ -229,8 +228,9 @@ def apply_prune_mask_bloc_iterative(model, masks):
             # fuse the weight masks
             if hasattr(layer, 'weight_mask'):
                 msk = msk*layer.weight_mask
-            layer.weight_mask = nn.Parameter(msk)
+            layer.register_parameter('weight_mask', nn.Parameter(msk))
             layer.weight_mask.requires_grad = False
+
             if isinstance(layer, nn.Linear):
                 layer.forward = types.MethodType(snip_forward_linear, layer) 
             if isinstance(layer, nn.Conv2d):

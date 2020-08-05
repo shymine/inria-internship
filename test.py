@@ -36,8 +36,14 @@ def main():
         model, dataset, train_params, optimizer, scheduler, device
     )
     params['epoch_prune'] = train_params['epoch_prune']
-    af.print_sparsity(best_model)
-    af.plot_acc([params])
+    # af.print_sparsity(best_model)
+    print("number of flops: {}".format(af.calculate_flops(best_model, (3,32,32))))
+    for layer in best_model.modules():
+        if isinstance(layer, (nn.Conv2d, nn.Linear)):
+            layer.weight_mask = nn.Parameter(torch.ones_like(layer.weight_mask))
+    print("number of flops no pruning: {}".format(af.calculate_flops(best_model, (3,32,32))))
+
+    #af.plot_acc([params])
 
 if __name__ == "__main__":
     main()

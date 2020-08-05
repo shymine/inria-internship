@@ -159,7 +159,7 @@ def create_mobilenet(models_path, task, save_type, get_params=False):
     return save_networks(model_name, model_params, models_path, save_type)
 
 
-def create_resnet_iterative(models_path, type="full", mode=None, prune=(False, 0.5, 128), return_name=True):
+def create_resnet_iterative(models_path, type="full", mode=None, prune=(False, 0.5, 128), ics=[0, 0, 1, 0, 0, 1, 0, 1, 0], return_name=True):
     print('Creating Resnet for iterative training for cifar10')
     model_params = get_task_params('cifar10')
     model_name = '{}_resnet_{}'.format('cifar10', type)
@@ -182,8 +182,8 @@ def create_resnet_iterative(models_path, type="full", mode=None, prune=(False, 0
     model_params['init_type'] = type
     if mode:
         model_params['mode'] = mode
-    model_params['size'] = 9
-    model_params['ics'] = [0, 0, 1, 0, 0, 1, 0, 1, 0]
+    model_params['size'] = len(ics)
+    model_params['ics'] = ics
     model_params['prune'], model_params['keep_ratio'], _ = prune
 
     model = ResNet_Baseline(model_params)
@@ -346,8 +346,12 @@ def load_model(models_path, model_name, epoch=0):
         elif 'mobilenet' in network_type:
             model = MobileNet(model_params)
 
-    elif 'iterative' in model_name:
+    elif 'iterative' or 'dense' in model_name:
         model = ResNet_Baseline(model_params)
+        num_to_grow = sum([1 if epoch > grow else 0 for grow in model_params['epoch_growth']]) if epoch != -1 else len(model_params['epoch_growth'])
+        for _ in range(num_to_grow):
+            model.grow()
+        
 
     network_path = models_path + '/' + model_name
 
