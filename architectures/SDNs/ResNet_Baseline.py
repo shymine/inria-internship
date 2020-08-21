@@ -54,7 +54,7 @@ class ResNet_Baseline(nn.Module):
         end_layers.append(nn.AvgPool2d(kernel_size=8))
         end_layers.append(af.Flatten())
         if self.init_type == 'dense':
-            end_layers.append(nn.Linear(2560 * self.block.expansion, self.num_class))
+            end_layers.append(nn.Linear(256 * (self.total_size + 1) * self.block.expansion, self.num_class))
         else:
             end_layers.append(nn.Linear(256 * self.block.expansion, self.num_class))
 

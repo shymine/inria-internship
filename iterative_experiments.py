@@ -9,7 +9,7 @@ import network_architectures as arcs
 
 def train_model(models_path, cr_params, device, num=0):
     type, mode, pruning, ics = cr_params
-    model, params = arcs.create_resnet_iterative(models_path, type, mode, pruning, ics=ics, False)
+    model, params = arcs.create_resnet_iterative(models_path, type, mode, pruning, ics, False)
     dataset = af.get_dataset('cifar10')
     params['name'] = params['base_model'] + '_{}_{}'.format(type, mode)
     if model.prune:
@@ -89,11 +89,11 @@ def main(mode, load):
     create_params = [
         # type, training, (prune?, keep_ratio for ics, batch size)
         # ('dense', '0', (True, [0.75, 0.66, 0.58, 0.46], 128), [0, 0, 1, 0, 0, 1, 0, 1, 0])
-        ('dense', '0', (False, [0.66, 0.46, 0.36, 0.36], 128), [0, 1, 0, 1, 0, 1, 0]),
-        ('dense', '0', (False, [0.66, 0.46, 0.36, 0.36], 128), [0, 1, 0, 1, 0, 1, 0]),
-        ('dense', '0', (False, [0.66, 0.46, 0.36, 0.36], 128), [0, 1, 0, 1, 0, 1, 0]),
-        ('dense', '0', (False, [0.66, 0.46, 0.36, 0.36], 128), [0, 1, 0, 1, 0, 1, 0]),
-        ('dense', '0', (False, [0.66, 0.46, 0.36, 0.36], 128), [0, 1, 0, 1, 0, 1, 0]),
+        ('dense', '0', (False, [0.66, 0.46, 0.36, 0.36], 128), [1, 1, 1]),
+        ('dense', '0', (False, [0.66, 0.46, 0.36, 0.36], 128), [1, 1, 1]),
+        ('dense', '0', (False, [0.66, 0.46, 0.36, 0.36], 128), [1, 1, 1]),
+        ('dense', '0', (False, [0.66, 0.46, 0.36, 0.36], 128), [1, 1, 1]),
+        ('dense', '0', (False, [0.66, 0.46, 0.36, 0.36], 128), [1, 1, 1]),
     ]
     create_bool = [
         1 if True
