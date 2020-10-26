@@ -54,6 +54,9 @@ class BasicBlockWOutput(nn.Module):
             self.forward = self.only_forward
             self.no_output = True
 
+        # for layer in filter(lambda l: isinstance(l, (nn.Conv2d, nn.Linear)), self.modules()):
+        #     print("init_layer id: {}, {}".format(layer, id(layer)))
+
     def forward(self, x):
         fwd = self.layers[0](x)  # conv layers
         fwd = fwd + self.layers[1](x)  # shortcut
@@ -122,11 +125,11 @@ class ResNet_SDN(nn.Module):  # 56 layers
         self.layers = nn.ModuleList()
         self.layers.extend(self._make_layer(self.in_channels, block_id=0, stride=1))
 
-        # self.cur_input_size = int(self.cur_input_size/2)
-        # self.layers.extend(self._make_layer(32, block_id=1, stride=2))
-        #
-        # self.cur_input_size = int(self.cur_input_size/2)
-        # self.layers.extend(self._make_layer(64, block_id=2, stride=2))
+        self.cur_input_size = int(self.cur_input_size/2)
+        self.layers.extend(self._make_layer(32, block_id=1, stride=2))
+        
+        self.cur_input_size = int(self.cur_input_size/2)
+        self.layers.extend(self._make_layer(64, block_id=2, stride=2))
 
         end_layers = []
 

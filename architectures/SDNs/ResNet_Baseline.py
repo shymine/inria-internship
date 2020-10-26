@@ -1,3 +1,6 @@
+import copy
+
+import torch
 import torch.nn as nn
 
 import architectures.SDNs.ResNet_SDN as resNet
@@ -7,8 +10,8 @@ import model_funcs as mf
 
 class ResNet_Baseline(nn.Module):
     def __init__(self, params):
-        super(ResNet_Baseline, self).__init__()
 
+        super(ResNet_Baseline, self).__init__()
         self.ic_only = False
         self.augment_training = params['augment_training']
         self.init_weights = params['init_weights']
@@ -18,6 +21,7 @@ class ResNet_Baseline(nn.Module):
         self.ics = params['ics'] if 'ics' in params else []
         self.num_ics = sum(self.ics)
         self.prune = params['prune']
+
         if self.prune:
             self.keep_ratio = params["keep_ratio"]
 
@@ -49,7 +53,10 @@ class ResNet_Baseline(nn.Module):
         end_layers = []
         end_layers.append(nn.AvgPool2d(kernel_size=8))
         end_layers.append(af.Flatten())
-        end_layers.append(nn.Linear(256 * self.block.expansion, self.num_class))
+        if self.init_type == 'dense':
+            end_layers.append(nn.Linear(256 * (self.total_size + 1) * self.block.expansion, self.num_class))
+        else:
+            end_layers.append(nn.Linear(256 * self.block.expansion, self.num_class))
 
         self.init_conv = nn.Sequential(*init_conv)
         self.layers = nn.ModuleList()
@@ -57,10 +64,7 @@ class ResNet_Baseline(nn.Module):
 
         train_funcs = {
             '0': mf.iter_training_0,
-            '1': mf.iter_training_1,
-            '2': mf.iter_training_2,
-            '3': mf.iter_training_3,
-            '4': mf.iter_training_4
+            '1': mf.iter_training_4
         }
 
         if self.init_type == "full":
@@ -78,6 +82,11 @@ class ResNet_Baseline(nn.Module):
             self.layers.extend(layers)
             self.num_output = sum(self.ics) + 1
         elif self.init_type == "iterative":
+            self.train_func = train_funcs[self.mode]
+            print("mode function: {}".format(self.train_func))
+            self.test_func = mf.sdn_test
+            self.grow()
+        elif self.init_type == "dense":
             self.train_func = train_funcs[self.mode]
             print("mode function: {}".format(self.train_func))
             self.test_func = mf.sdn_test
@@ -121,11 +130,41 @@ class ResNet_Baseline(nn.Module):
                 outputs.append(output)
         return outputs
 
+    def forward_eval_dense(self, input):
+        outputs = []
+        fwd = self.init_conv(input)
+        added_input = fwd
+        for layer in self.layers:
+            fwd, is_output, output = layer(added_input)
+            added_input = torch.cat([added_input, fwd], 1)
+            if is_output:
+                outputs.append(output)
+        fwd = self.end_layers(added_input)
+        outputs.append(fwd)
+        return outputs
+
+    def forward_train_dense(self, input):
+        outputs = []
+        fwd = self.init_conv(input)
+        added_input = fwd
+        for layer in self.layers:
+            fwd, is_output, output = layer(added_input)
+            added_input = torch.cat([added_input, fwd], 1)
+            if is_output:
+                outputs.append(output)
+        return outputs
+
     def to_train(self):
-        self.forward = self.forward_train
+        if self.init_type == "dense":
+            self.forward = self.forward_train_dense
+        else:
+            self.forward = self.forward_train
 
     def to_eval(self):
-        self.forward = self.forward_eval
+        if self.init_type == "dense":
+            self.forward = self.forward_eval_dense
+        else:
+            self.forward = self.forward_eval
 
     def grow(self):  # grow to the next ic or, if no ic till the end is found, grow the needed layers
         nb_grow = 0
@@ -134,16 +173,12 @@ class ResNet_Baseline(nn.Module):
         tmp = 0
         for ind, ic in enumerate(self.ics):
             tmp += ic
-            # print("loop ({}), tmp:{}, ic:{}".format(ind, tmp, ic))
             if tmp >= self.num_output:
                 ics_index = ind
                 break
-        # print("tmp: {}, num_ics: {}".format(tmp, self.num_ics))
         if tmp == self.num_ics:  # no more ICs are to be grown
             print("Eval mode")
             self.to_eval()
-        # print("ics_index: {}".format(ics_index))
-        # print("iter on: {}".format(self.ics[ics_index:]))
         pos = 1
         if ics_index == 0:
             pos = 0
@@ -152,14 +187,21 @@ class ResNet_Baseline(nn.Module):
             if ic:
                 add_ic = True
                 break
-        # print("nb_grow: {}".format(nb_grow))
-        layers = [
-            self.block(self.in_channels,
-                       16, (add_ic if i == nb_grow - 1 else False,
-                            self.num_class, 32, 1))
-            for i in range(nb_grow)
-        ]
-        # print("grown layers: {}".format(layers))
+        layers = []
+        for i in range(nb_grow):
+            if self.init_type == "dense":
+                layers.append(self.block(
+                    self.in_channels,
+                    16, (add_ic if i == nb_grow - 1 else False,
+                                self.num_class, 32, 1)
+                ))
+                self.in_channels += 16
+            else:
+                layers.append(self.block(
+                    self.in_channels,
+                    16, (add_ic if i == nb_grow - 1 else False,
+                         self.num_class, 32, 1)
+                ))
         self._init_weights(layers)
         self.layers.extend(layers)
         self.num_output += 1

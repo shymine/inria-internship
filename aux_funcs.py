@@ -12,11 +12,13 @@ import random
 import sys
 import time
 import statistics
+from functools import reduce
 
 import matplotlib
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.optim.optimizer import Optimizer, required
 
 matplotlib.use('Agg')
 
@@ -30,7 +32,7 @@ from torch.optim.lr_scheduler import _LRScheduler, ExponentialLR
 from torch.nn import CrossEntropyLoss
 
 import network_architectures as arcs
-
+import snip
 from profiler import profile
 
 from data import CIFAR10, CIFAR100, TinyImagenet
@@ -87,6 +89,61 @@ class MultiStepMultiLR(_LRScheduler):
         print("af scheduler: {}".format(lrs))
         return lrs
 
+class SGDForPruning(Optimizer):
+
+    def __init__(self, params, lr=required, momentum=0, dampening=0,
+                 weight_decay=0, nesterov=False):
+        if lr is not required and lr < 0.0:
+            raise ValueError("Invalid learning rate: {}".format(lr))
+        if momentum < 0.0:
+            raise ValueError("Invalid momentum value: {}".format(momentum))
+        if weight_decay < 0.0:
+            raise ValueError("Invalid weight_decay value: {}".format(weight_decay))
+
+        defaults = dict(lr=lr, momentum=momentum, dampening=dampening,
+                        weight_decay=weight_decay, nesterov=nesterov)
+        if nesterov and (momentum <= 0 or dampening != 0):
+            raise ValueError("Nesterov momentum requires a momentum and zero dampening")
+        super(SGDForPruning, self).__init__(params, defaults)
+
+    def __setstate__(self, state):
+        super(SGDForPruning, self).__setstate__(state)
+        for group in self.param_groups:
+            group.setdefault('nesterov', False)
+
+    @torch.no_grad()
+    def step(self, closure=None):
+        loss = None
+        if closure is not None:
+            with torch.enable_grad():
+                loss = closure()
+
+        for group in self.param_groups:
+            weight_decay = group['weight_decay']
+            momentum = group['momentum']
+            dampening = group['dampening']
+            nesterov = group['nesterov']
+
+            for p in group['params']:
+                if p.grad is None:
+                    continue
+                d_p = p.grad
+                if weight_decay != 0:
+                    d_p = d_p.add(p, alpha=weight_decay)
+                if momentum != 0:
+                    param_state = self.state[p]
+                    if 'momentum_buffer' not in param_state:
+                        buf = param_state['momentum_buffer'] = torch.clone(d_p).detach()
+                    else:
+                        buf = param_state['momentum_buffer']
+                        buf.mul_(momentum).add_(d_p, alpha=1 - dampening)
+                    if nesterov:
+                        d_p = d_p.add(buf, alpha=momentum)
+                    else:
+                        d_p = buf
+                d_p[p==0.] = 0.
+                p.add_(d_p, alpha=-group['lr'])
+        return loss
 
 # flatten the output of conv layers for fully connected layers
 class Flatten(nn.Module):
@@ -257,8 +314,8 @@ def get_full_optimizer(model, lr_params, stepsize_params):
     milestones = stepsize_params[0]
     gammas = stepsize_params[1]
 
-    optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, momentum=momentum,
-                    weight_decay=weight_decay)
+    # optimizer = SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, momentum=momentum, weight_decay=weight_decay)
+    optimizer = SGDForPruning(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, momentum=momentum, weight_decay=weight_decay)
     scheduler = MultiStepMultiLR(optimizer, milestones=milestones, gammas=gammas, last_epoch=epoch)
 
     return optimizer, scheduler
@@ -534,21 +591,32 @@ def format_outputs(outputs):
     return res
 
 
-def print_acc(arr, extend=False):
+def print_acc(arr, groups=None, extend=False):
     str = "accuracies:\n"
     for i in arr:
-        str += "{}: {}, \n".format(i[1]['name'], i[1]['test_top1_acc'])
+        str += "{}: {}, {},\n".format(i[1]['name'], i[1]['test_top1_acc'], i[1]['best_model_epoch'])
     print(str)
-    def mean(arr):
+    def mean_(arr):
         return math.fsum(arr)/len(arr)
     if extend:
         acc = [i[1]['test_top1_acc'] for i in arr]
-        tr = reverse(acc)
-        means = [statistics.mean(i) for i in tr]
-        stds = [statistics.stdev(i) for i in tr]
-        print("means: {}".format(means))
-        print("stds: {}".format(stds))
-        print("std%: {}".format([100*std/mean for std, mean in zip(stds, means)]))
+        if groups is None:
+            tr = reverse(acc)
+            means = [statistics.mean([float(a) for a in i]) for i in tr]
+            stds = [statistics.stdev([float(a) for a in i]) for i in tr]
+            print("means: {}".format(means))
+            print("stds: {}".format(stds))
+            print("std%: {}".format([100*std/mean for std, mean in zip(stds, means)]))
+        else: # groups=[2,2,2]
+            groups_cum = [0] + [sum(groups[:i+1]) for i in range(len(groups))]
+            for i in range(len(groups)):
+                group_acc = acc[groups_cum[i]:groups_cum[i+1]]
+                tr = reverse(group_acc)
+                means = [statistics.mean([float(j) for j in i]) for i in tr]
+                stds = [statistics.stdev([float(j) for j in i]) for i in tr]
+                print("{} means: {}".format(i, means))
+                print("{} stds: {}".format(i, stds))
+                print("{} std /100: {}".format(i, [100 * std / mean for std, mean in zip(stds, means)]))
 
 def reverse(test_acc):
     max_len = len(test_acc[-1])
@@ -566,17 +634,17 @@ def reverse(test_acc):
     return res
 
 def plot_acc(arr):
-
     figs = []
     for i, m in enumerate(arr):
         acc = m['valid_top1_acc']
         tr = reverse(acc)
         fig, ax = plt.subplots()
-
+        ax.text(m['epochs']-80, 20, "best model epoch: \n{}".format(m['best_model_epoch']))
         ax.set_xlabel('epochs')
         ax.set_ylabel('accuracy')
-        name = "_".join(m['name'].split('_')[3:]) + "\nmilestones{}_{}".format(m['milestones'], m['gammas'])
-        ax.set_title('{}\n accuracy: {}'.format(name, m['test_top1_acc']))
+        name = "_".join(m['name'].split('_')[3:])
+        ax.set_title(name + '\naccuracy: {}'.format(m['test_top1_acc']))
+
         ax.plot([i for i in range(len(acc))],
                 tr[0],
                 label="IC 1")
@@ -589,9 +657,155 @@ def plot_acc(arr):
         ax.plot([i for i in range(len(acc))],
                 tr[3],
                 label="final output")
+        
+        for epoch_prune in m['epoch_prune']:
+            ax.axvline(x=epoch_prune)
+
         figs.append(fig)
     name = time.asctime(time.localtime(time.time())).replace(" ", "_")
     if not os.path.exists("results/{}".format(name)):
         os.makedirs("results/{}".format(name))
     for i, fig in enumerate(figs):
         fig.savefig("results/{}/{}".format(name, i))
+
+
+def print_sparsity(model, mask=False):
+    blocks = snip.get_blocs(model)
+    #grown_index = -1
+    print("blocks:")
+    for i, b in enumerate(blocks):
+        if len(b)==0:
+            break
+        #grown_index += 1
+        if mask:
+            p_z = sum([torch.sum(layer.weight_mask != 0) for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), b.modules())]) 
+            t_p = sum([layer.weight_mask.nelement() for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), b.modules())])
+        else:
+            p_z = sum([torch.sum(layer.weight != 0) for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), b.modules())]) 
+            t_p = sum([layer.weight.nelement() for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), b.modules())])
+        print("    {} total: {}, non zero: {}, ratio: {:.2f}".format(i, t_p, p_z, float(p_z)/float(t_p)))
+    
+    if mask:
+        total_param = sum([layer.weight_mask.nelement() for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), model.modules())])
+        param_z = sum([torch.sum(layer.weight_mask != 0) for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), model.modules())]) 
+    else:
+        total_param = sum([layer.weight.nelement() for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), model.modules())])
+        param_z = sum([torch.sum(layer.weight != 0) for layer in filter(lambda l: isinstance(l, (nn.Linear, nn.Conv2d)), model.modules())]) 
+
+    final_layers_param = sum(layer.weight.nelement() for layer in filter(lambda l: isinstance(l, (nn.Conv2d, nn.Linear)), model.end_layers.modules()))
+    total_param = total_param-final_layers_param if len(blocks[-1]) == 0 else total_param
+    param_z = param_z-final_layers_param if len(blocks[-1]) == 0 else param_z
+    print("total: {}, non_zero: {}, ratio: {}".format(total_param, param_z, float(param_z)/float(total_param)))
+
+def connection_importance(model):
+    print("truc")
+    distances = [[] for _ in range(len(model.layers)-1)]
+    for cell in model.layers:
+        nb_input = cell.layers[0]
+    # TODO: connection importance
+
+def calculate_flops(model, input_shape):
+    def flop_linear(layer):
+        if layer.bias is not None:
+            flops = 2*layer.in_features*layer.out_features
+        else:
+            flops = layer.out_features*(2*layer.in_features - 1)
+        if hasattr(layer, 'weight_mask'):
+            flops -= 2*sum(layer.weight_mask.flatten()==0.).item() # if one value is zero then there is 1mul and 1add that are removed
+            flops += sum([1 if sum(line)==0. else 0 for line in layer.weight_mask]) # if one line is empty, then we have to count back the addition that has been removed that is too much
+        return flops
+    def flop_conv2d(layer, **kwargs):
+        in_shape = kwargs['in_shape']
+        if isinstance(layer.kernel_size, int):
+            n = in_shape[0] * layer.kernel_size * layer.kernel_size
+        else: 
+            n = layer.in_channels*layer.kernel_size[0]*layer.kernel_size[1]
+        flops_per_filter = []
+        empty_filter = 0
+        if isinstance(layer.kernel_size, int):
+            num_instances_per_filter = math.floor(size_func(in_shape[1], layer.padding, layer.dilation if hasattr(layer, 'dilation') else 1, layer.kernel_size, layer.stride))
+            num_instances_per_filter *= math.floor(size_func(in_shape[2], layer.padding, layer.dilation if hasattr(layer, 'dilation') else 1, layer.kernel_size, layer.stride))
+        else:
+            num_instances_per_filter = math.floor(size_func(in_shape[1], layer.padding[0], layer.dilation[0], layer.kernel_size[0], layer.stride[0]))
+            num_instances_per_filter *= math.floor(size_func(in_shape[2], layer.padding[1], layer.dilation[1], layer.kernel_size[1], layer.stride[1]))
+
+        if hasattr(layer, 'weight_mask'):
+            for filt in layer.weight_mask:
+                f_n = n - sum(filt.flatten()==0.).item()
+                if f_n < 0:
+                    print("f_n: {}, n: {}, mask: {}, layer: {}, in_shape: {}".format(f_n, n, filt.shape, layer, in_shape))
+                flops_per_instance = f_n + 1
+                if sum(filt.flatten()) == 0.:
+                    empty_filter += 1
+                flops_per_filter.append(num_instances_per_filter * flops_per_instance)
+        else:
+            flops_per_instance = n + 1
+            ite = layer.out_channels if isinstance(layer, nn.Conv2d) else in_shape[0]
+            flops_per_filter.extend([num_instances_per_filter * flops_per_instance for _ in range(ite)])
+        flops = sum(flops_per_filter)
+        if hasattr(layer, 'bias') and layer.bias is not None:
+            flops += layer.out_channels
+
+        flops -= empty_filter
+        return flops
+    def flop_relu(input_shape):
+        return reduce(lambda x,y: x*y, input_shape)
+    
+    def size_func(in_shape, padding, dilation, kernel_size, stride):
+        return ((in_shape + 2*padding - dilation*(kernel_size-1)-1)/stride)+1
+    
+    in_shape = input_shape
+    flops = 0
+    ic_buffer = []
+    ic = None
+    for layer in model.modules():
+        if isinstance(layer, InternalClassifier):
+            ic_buffer.append([layer, in_shape])
+            ic = 0
+            continue
+        if ic is not None:
+            ic += 1
+            if ic == 3:
+                ic = None
+            continue
+        linear = isinstance(layer, nn.Linear)
+        conv2d = isinstance(layer, (nn.Conv2d, nn.MaxPool2d, nn.AvgPool2d))
+        relu = isinstance(layer, nn.ReLU)
+        if linear or conv2d or relu:
+            flops += flop_linear(layer) if linear else flop_conv2d(layer, in_shape=in_shape) if conv2d else flop_relu(in_shape)
+            if conv2d:
+                if isinstance(layer, nn.Conv2d) and layer.padding[0] != 0.:
+                    in_shape = (
+                        layer.out_channels,
+                        math.floor(size_func(in_shape[1], layer.padding[0], layer.dilation[0], layer.kernel_size[0], layer.stride[0])),
+                        math.floor(size_func(in_shape[2], layer.padding[1], layer.dilation[1], layer.kernel_size[1], layer.stride[1]))
+                    )
+                elif isinstance(layer, (nn.MaxPool2d, nn.AvgPool2d)):
+                        in_shape = (
+                            in_shape[0],
+                            math.floor(size_func(in_shape[1], layer.padding, layer.dilation if hasattr(layer, 'dilation') else 1, layer.kernel_size, layer.stride)),
+                            math.floor(size_func(in_shape[2], layer.padding, layer.dilation if hasattr(layer, 'dilation') else 1, layer.kernel_size, layer.stride))
+                        )
+                    
+    for ic, in_shape in ic_buffer:
+        for layer in ic.modules():
+            linear = isinstance(layer, nn.Linear)
+            conv2d = isinstance(layer, (nn.Conv2d, nn.MaxPool2d, nn.AvgPool2d))
+            relu = isinstance(layer, nn.ReLU)
+            if linear or conv2d or relu:
+                flops += flop_linear(layer) if linear else flop_conv2d(layer, in_shape=in_shape) if conv2d else flop_relu(in_shape)
+                if conv2d:
+                    if isinstance(layer, nn.Conv2d):
+                        in_shape = (
+                            layer.out_channels,
+                            math.floor(size_func(in_shape[1], layer.padding[0], layer.dilation[0], layer.kernel_size[0], layer.stride[0])),
+                            math.floor(size_func(in_shape[2], layer.padding[1], layer.dilation[1], layer.kernel_size[1], layer.stride[1]))
+                        )
+                    elif isinstance(layer, nn.AvgPool2d): # Avg as it is the last pooling method used and that it should take the same input as MaxPool
+                        in_shape = (
+                            in_shape[0],
+                            math.floor(size_func(in_shape[1], layer.padding, layer.dilation if hasattr(layer, 'dilation') else 1, layer.kernel_size, layer.stride)),
+                            math.floor(size_func(in_shape[2], layer.padding, layer.dilation if hasattr(layer, 'dilation') else 1, layer.kernel_size, layer.stride))
+                        )
+    return flops
+
