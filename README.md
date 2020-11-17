@@ -2,7 +2,7 @@
 
 This project is the result of my end-of-study internship in the Linkmedia Team in INRIA Rennes in 2020.
 
-The thesis of this project will be accessible at intranet.insa-rennes.fr/informations-etudiants/memoires-de-master-et-de-pfe-en-ligne.html . 
+The thesis of this project will be accessible at https://avrithis.net/data/cv/pdf/msc/2020.neitthoffer.pdf . 
 
 ## Source code
 
